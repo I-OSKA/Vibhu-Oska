@@ -1,60 +1,68 @@
 # Vibhu-Oska Models Directory
 
-This directory contains the neural network architectures, custom tokenizers, training scripts, and model registry configurations for the Vibhu-Oska local intelligence layer.
+Neural network architectures, custom tokenizers, training scripts, and model registry for the Vibhu-Oska local intelligence layer.
 
 ## Overview
 
-Vibhu-Oska relies on localized, self-hosted transformers running entirely on local hardware (CPU, GPU, NPU) without external API dependencies. The intelligence cortex is bifurcated into:
+Vibhu-Oska runs self-hosted transformers entirely on local hardware without external API dependencies. The model layer consists of:
 
-1. **Sovereign GPT** (`sovereign_gpt`): A custom causal language model and self-contained BPE tokenizer built from scratch, optimized for offline text generation, code templates, and contextual RAG reasoning.
-2. **Intent Router** (`router`): A custom multi-class classifier transformer that inspects prompt parameters and dynamically directs execution target (GPU | CPU | NPU) and task categories (CHAT | CODE | RESEARCH | MEMORY | SYSTEM).
+1. **Karsh** (`karsh/`): A custom causal language model and BPE tokenizer built from scratch — the primary reasoning engine.
+2. **Intent Router** (`router/`): A multi-class classifier that routes prompts to the correct execution target (GPU/CPU) and task category (CHAT/CODE/RESEARCH/MEMORY).
 
----
+## Architecture
 
-## 1. Intent Router (`Models/router/`)
+```mermaid
+graph TB
+    subgraph "Models"
+        K[Karsh<br/>Custom LLM<br/>25M params]
+        R[Router<br/>Task Classifier<br/>~3MB]
+        Q[Reasoning<br/>QLoRA Fine-tune]
+    end
 
-The Intent Router operates as the speculative gateway of the system, implementing an in-process Cascadeflow-style scheduling network.
+    K --> |"inference"| CC[CognitionCore]
+    R --> |"classify"| OC[OrchestratorCore]
+    Q --> |"fine-tune"| K
+```
 
-### Architecture
-- **Type**: Causal decoder-only Transformer with classification heads.
-- **Parameters**: 
-  - **GPU/NPU Zone**: 12 Layers, 768 Hidden Dim, 12 Heads (approx. 86M parameters).
-  - **CPU (Scaled)**: 2 Layers, 128 Hidden Dim, 4 Heads (approx. 760K parameters) to avoid slow convergence during local testing/CPU fallbacks.
-- **Pooling**: Causal attention sequence pooling (uses the final non-padded token representation instead of the causal BOS token representation).
-- **Activation**: SwiGLU (matching LLaMA architecture standards).
-- **Positional Embeddings**: Rotary Position Embeddings (RoPE).
+## Karsh (`Models/karsh/`)
 
-### Execution Scripts
-- **Dataset Generation**: Generates 1,000 synthetic task queries mapped to GPU/CPU/NPU targets and task types.
-  ```powershell
-  .venv\Scripts\python -m Models.router.dataset_generator
-  ```
-- **Training Pipeline**: Trains the BPE tokenizer and optimizes model weights using AdamW with Cosine Annealing.
-  ```powershell
-  .venv\Scripts\python -m Models.router.train --epochs 10
-  ```
-- **ONNX Export**: Compiles the trained model to ONNX format for deployment inside edge NPUs.
-  ```powershell
-  .venv\Scripts\python -m Models.router.train --export-onnx
-  ```
+The primary in-process reasoning engine.
 
----
+| Parameter | Value |
+|---|---|
+| Type | Decoder-only transformer (GPT-style) |
+| Attention | Multi-Head Causal Self-Attention |
+| Position encoding | RoPE (Rotary Positional Embeddings) |
+| Feed-forward | SwiGLU activation (Llama-style) |
+| Normalization | RMSNorm (Llama-style) |
+| Default config | vocab=8000, hidden=512, 12 layers, 8 heads, max_seq=512 |
+| Tokenizer | Custom BPE (KarshBPETokenizer) |
 
-## 2. Sovereign GPT (`Models/sovereign_gpt/`)
+```bash
+# Train
+python -m Models.karsh.train
 
-The primary in-process reasoning engine designed to perform private inference, text processing, and fallback assistance.
+# Generate
+python -m Models.karsh.generate --prompt "your query"
+```
 
-### Architecture
-- **Type**: Decoder-only Causal GPT transformer.
-- **Tokenizer**: Custom Sovereign BPE Tokenizer (`SovereignBPETokenizer`) generating deterministic, persistent vocabulary keys without randomized hashing.
-- **Seeding**: Seeds a local text corpus of instructions, programming examples, database connectors, and spellchecker structures to bootstrap the model offline.
+## Router (`Models/router/`)
 
-### Execution Scripts
-- **Training Loop**:
-  ```powershell
-  .venv\Scripts\python -m Models.sovereign_gpt.train --epochs 40
-  ```
-- **Inference**:
-  ```powershell
-  .venv\Scripts\python -m Models.sovereign_gpt.generate --prompt "your query here"
-  ```
+Speculative task classifier for execution target routing.
+
+```bash
+# Generate training data
+python -m Models.router.dataset_generator
+
+# Train
+python -m Models.router.train --epochs 10
+```
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `registry.json` | Model registry with configs, checkpoints, and status |
+| `karsh/` | Karsh LLM: architecture, tokenizer, training, generation |
+| `router/` | Intent Router: classification model + training |
+| `reasoning/` | QLoRA fine-tuning pipeline |

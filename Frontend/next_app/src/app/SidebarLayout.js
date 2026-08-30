@@ -19,9 +19,11 @@ import {
   Cpu,
   Activity,
   Lock,
-  Unlock
+  Unlock,
+  Terminal
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { API } from '../lib/api';
 
 export default function SidebarLayout({ children }) {
   const pathname = usePathname();
@@ -111,7 +113,7 @@ export default function SidebarLayout({ children }) {
   useEffect(() => {
     const fetchTelemetry = async () => {
       try {
-        const resp = await fetch('http://127.0.0.1:8000/api/v1/telemetry');
+        const resp = await fetch(API.buildUrl(API.endpoints.telemetry));
         if (!resp.ok) return;
         const data = await resp.json();
         if (data.available && data.thermal) {
@@ -158,6 +160,7 @@ export default function SidebarLayout({ children }) {
     { name: 'Config', path: '/config', icon: Settings },
     { name: 'Playground', path: '/playground', icon: MessageSquare },
     { name: 'Research', path: '/research', icon: Search },
+    { name: 'Training', path: '/training', icon: Terminal },
     { name: 'Claude Code', path: '/code', icon: Code2 },
     { name: 'Odyssey Sandbox', path: '/sandbox', icon: Gamepad2 },
     { name: 'Self-Updater', path: '/admin', icon: ShieldAlert },

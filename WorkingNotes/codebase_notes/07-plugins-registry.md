@@ -127,7 +127,7 @@ Used by: Stage 5 autonomous training data generation
 ```
 Cron-style background task scheduler.
 Actions: add_job(func, cron_expr), remove_job(job_id), list_jobs()
-Planned use: nightly Sovereign GPT retraining, weekly ChromaDB compaction
+Planned use: nightly SARA retraining, weekly ChromaDB compaction
 ```
 
 ### 13. ThermalMonitor (`ThermalMonitor/`)

@@ -12,7 +12,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - spaCy/stanza NER integration for higher-accuracy GRAG entity extraction
 - Streaming token-by-token WebSocket output (currently full-response delivery)
 - Multi-user session isolation with JWT-based auth flow
-- Sovereign GPT fine-tuning pipeline from collected RLHF feedback events
+- Karsh fine-tuning pipeline from collected RLHF feedback events
 - `Deep-Thought Mode` — internal MCTS reflection loop with multi-path scoring
 
 ---
@@ -45,7 +45,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 #### Intelligence Pipeline
 - `ValidationCore` — SQL injection and XSS sanitization (input); JSON schema enforcement (output)
-- `CognitionCore` — Norvig edit-distance spell checker; sovereign-gpt/direct-transformer routing
+- `CognitionCore` — Norvig edit-distance spell checker; sara/direct-transformer routing
 - `HybridCore` — hardware-aware CPU/GPU/NPU routing with health-gated failover
 - `BackupCore` — deterministic keyword-matching fallback; zero external dependencies
 - `MonitoringCore` — psutil-based CPU, RAM, GPU telemetry at configurable intervals
@@ -61,12 +61,12 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   - `POST /api/v1/corpus/append` — QA format detection and corpus append
   - `GET /api/v1/sessions` — recent session listing ordered by `updated_at`
 
-#### Sovereign GPT
+#### Karsh
 - `VibhuOskaGPT` — decoder-only transformer: RMSNorm, RoPE, SwiGLU FFN, weight-tied embedding/LM-head
-- `SovereignBPETokenizer` — byte-pair encoding trained from scratch on local corpus
+- `KarshBPETokenizer` — byte-pair encoding trained from scratch on local corpus
 - Training pipeline with AdamW, OneCycleLR, gradient clipping, early stopping at ≥99.5% accuracy
 - Self-contained Q&A corpus seed: Python, FastAPI, SQL, CSS, math, language, Vibhu-Oska Q&A
-- `SovereignGPTGenerator` — temperature-controlled autoregressive sampling
+- `KarshGenerator` — temperature-controlled autoregressive sampling
 
 #### Frontend Dashboard
 - Dark-mode layout with glassmorphism panels and CSS custom property design system
@@ -76,7 +76,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - Memory panel: vector search, KG query, GRAG ingest form with live node/edge count
 - Session history sidebar with `newSession()` flow and 30s auto-refresh
 - Monitor panel: real-time Chart.js latency and event throughput graphs
-- Training panel: live log stream, corpus append, Sovereign GPT controls
+- Training panel: live log stream, corpus append, Karsh controls
 - Voice biometric lock: 3-sample pitch fingerprint gate (22% variance tolerance)
 - RLHF feedback bar, execution replay log, task queue with live status indicators
 - Auto-GRAG ingestion of AI responses after each generation
@@ -85,7 +85,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - Multi-stage Dockerfile with CPU/GPU build targets (`DEVICE=cpu|gpu`)
 - Docker Compose with health check, named volume for `Data/`, `.env` injection
 - 65-test integration suite (happy path, boundary, adversarial inputs)
-- `setup.sh`, `train_sovereign_gpt.sh`, `generate_protos.sh`
+- `setup.sh`, `train_sara.sh`, `generate_protos.sh`
 
 ### Fixed
 - `DataCore.query_memory()` keyword argument mismatch — Gateway was calling

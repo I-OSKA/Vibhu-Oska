@@ -28,10 +28,28 @@ Vibhu-Oska is an **Autonomous AI Operating System** — not a chatbot, not a wra
 - Runs 100% locally — no OpenAI, no Gemini, no Anthropic
 - Dual memory architecture: ChromaDB (semantic vectors) + SQLite (relational state)
 - ZeroMQ event bus for async pub/sub messaging between all cores
-- Custom Sovereign GPT trained from PyTorch primitives
+- Custom Karsh model trained from PyTorch primitives
 - Speculative task router with trained classifier model
 - GraphRAG knowledge graph for entity-aware context retrieval
 - Full OS executive layer (file system, process management, hardware telemetry)
+
+---
+
+## The Divine Framework
+
+Vibhu-Oska is built on a framework inspired by Hindu mythology, where the system's architecture maps to cosmic principles:
+
+| Level | Hindu Concept | Vibhu-Oska | Role |
+|-------|---------------|------------|------|
+| Creator | Brahma | OrchestratorCore | Creates task flow, routes |
+| Preserver | Vishnu | CognitionCore | Preserves knowledge, hosts Karsh |
+| Transformer | Shiva | EvolutionCore | Destroys old, transforms via RL |
+| Wisdom | Saraswati | MonitoringCore | Observes, records |
+| Abundance | Lakshmi | OptimizationCore | Optimizes resources |
+| Power | Parvati | Training Pipeline | Feeds evolution |
+| **Creative Intelligence** | **Vishnu (Karsh)** | **Karsh Model** | **The generative mind** |
+
+**Karsh (कर्ष)** = Sanskrit: to draw, attract, create. A name of Vishnu — the preserver who sustains all.
 
 ---
 
@@ -46,7 +64,7 @@ Vibhu-Oska is an **Autonomous AI Operating System** — not a chatbot, not a wra
          ┌───────────────┼───────────────┐
          │               │               │
     ┌────▼────┐    ┌─────▼──────┐  ┌────▼──────┐
-    │Hybrid   │    │Orchestrator│  │Monitoring │
+    │Orch     │    │Orchestrator│  │Monitoring │
     │Core     │    │Core        │  │Core       │
     └────┬────┘    └─────┬──────┘  └───────────┘
          │               │
@@ -59,9 +77,8 @@ Vibhu-Oska is an **Autonomous AI Operating System** — not a chatbot, not a wra
          ┌────────────────┼──────────────────┐
          │                │                  │
     ┌────▼────┐    ┌──────▼───┐    ┌────────▼───┐
-    │Sovereign│    │DataCore  │    │Specialized │
-    │GPT      │    │ChromaDB  │    │Cores       │
-    │(custom) │    │+ SQLite  │    │Automation  │
+     │Karsh     │    │DataCore  │    │Specialized │
+     │(custom)  │    │ChromaDB  │    │Cores       │
     └─────────┘    │+ GRAG    │    │Design      │
                    └──────────┘    │ImageGen    │
                                    │Distribution│
@@ -188,22 +205,22 @@ vibhu-oska-mcp
 
 ## Training Models
 
-### Train Sovereign GPT (Custom LLM — from scratch)
+### Train Karsh (Custom LLM — from scratch)
 
-Sovereign GPT is Vibhu-Oska's own custom-trained decoder-only transformer built purely from PyTorch primitives.
+Karsh (कर्ष) is Vibhu-Oska's own custom-trained decoder-only transformer built purely from PyTorch primitives. Karsh = to draw, attract, create — a name of Vishnu, the preserver.
 
 ```bash
 # From the project root, with .venv activated
-python -m Models.sovereign_gpt.train
+python -m Models.karsh.train
 
 # With custom parameters
-python -m Models.sovereign_gpt.train --epochs 20 --batch-size 32 --lr 3e-4
+python -m Models.karsh.train --epochs 60 --batch-size 8 --lr 3e-4
 ```
 
-Checkpoints are saved to `Models/sovereign_gpt/checkpoints/`.
-After training, the system will automatically use `sovereign_gpt.pt` for inference.
+Checkpoints are saved to `Models/karsh/checkpoints/`.
+After training, the system will automatically use `karsh.pt` for inference.
 
-**Training data** lives in `Data/training/sovereign_gpt/corpus.txt`. Add more Q&A pairs there before training to improve quality.
+**Training data** lives in `Data/training/karsh/corpus.txt`. Add more Q&A pairs there before training to improve quality.
 
 ### Train the Router Model (Task Classifier)
 
@@ -266,10 +283,10 @@ Vibhu-Oska/
 │   │   ├── Watchdog/              ← Health daemon + auto-restart
 │   │   ├── BackupCore/            ← CPU rules-based fallback
 │   │   └── MainCore/
-│   │       ├── HybridCore/        ← Health routing + speculative dispatch
-│   │       ├── OrchestratorCore/  ← Double-validation pipeline manager
+│   │       ├── OrchestratorCore/  ← Brahma: routing + pipeline coordination
+│   │       ├── CognitionCore/     ← Vishnu: Karsh LLM inference
+│   │       ├── EvolutionCore/     ← Shiva: self-improvement via RL
 │   │       ├── ValidationCore/    ← Input/output contract enforcement
-│   │       ├── CognitionCore/     ← Sovereign GPT + Qwen fallback inference
 │   │       ├── MonitoringCore/    ← Telemetry logging
 │   │       └── OptimizationCore/  ← Query cache + context compression
 │   │   └── SpecializedCore/
@@ -281,7 +298,7 @@ Vibhu-Oska/
 │   ├── Gateway/                   ← FastAPI + WebSocket + MCP server
 │   └── Plugins/                   ← 14 core service plugins
 ├── Models/
-│   ├── sovereign_gpt/             ← Custom GPT: architecture, tokenizer, train, generate
+│   ├── karsh/             ← Karsh: architecture, tokenizer, train, generate
 │   ├── router/                    ← Task classifier: architecture, train, dataset_generator
 │   └── reasoning/                 ← QLoRA fine-tuning pipeline
 ├── Shared/
@@ -309,7 +326,7 @@ Vibhu-Oska/
 | `system.version` | — | `0.2.0` | System version string |
 | `gateway.host` | — | `127.0.0.1` | API server bind address |
 | `gateway.port` | — | `8000` | API server port |
-| `models.reasoning.name` | — | `sovereign-gpt` | Default inference model |
+| `models.reasoning.name` | — | `sara` | Default inference model |
 | `logging.level` | — | `DEBUG` | Log verbosity |
 | `logging.file_enabled` | — | `true` | Write logs to disk |
 

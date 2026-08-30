@@ -1,54 +1,60 @@
-# OrchestratorCore
+# OrchestratorCore — Brahma (The Creator)
 
-The tactical request lifecycle manager. Sits at the center of the double-validation pipeline, coordinating every core without containing any business logic of its own.
+The tactical request lifecycle manager. Absorbs HybridCore routing. Drives the 8-step processing pipeline without containing business logic.
 
 ## Responsibility
 
-OrchestratorCore receives user input events from the ZeroMQ EventBus and drives the 8-step processing pipeline to completion. It never thinks — it delegates.
+OrchestratorCore receives user input events from the ZeroMQ EventBus and drives the processing pipeline to completion. It routes requests, manages primary/backup handover, and coordinates all cores.
 
 ## The 8-Step Pipeline
 
+```mermaid
+graph LR
+    A[1. ValidationCore<br/>Input guard] --> B[2. OptimizationCore<br/>Cache check]
+    B --> C[3. DataCore<br/>Create session]
+    C --> D[4. DataCore<br/>Context retrieval]
+    D --> E[5. OptimizationCore<br/>Context pruning]
+    E --> F[6. SpecializedCore<br/>Pre-routing]
+    F --> G[7. OrchestratorCore<br/>Primary routing]
+    G --> H[8. ValidationCore<br/>Output guard]
 ```
-1. ValidationCore      → Input guard (fail fast on malformed or dangerous prompts)
-2. OptimizationCore    → Cache check (serve instantly if seen before)
-3. DataCore            → Create session + persist interaction
-4. DataCore            → Context retrieval (history + semantic + GraphRAG)
-5. OptimizationCore    → Context pruning (stay within token budget)
-6. SpecializedCore     → Pre-cognition dispatch (image/design/OS if matched)
-7. HybridCore          → Default cognition path (Sovereign GPT → Qwen → BackupCore)
-8. ValidationCore      → Output guard (schema validation before publishing)
+
+## Routing Architecture (Absorbed from HybridCore)
+
+```mermaid
+graph TB
+    P[User Prompt] --> FR{FastResponder}
+    FR --> |"match"| IR[Instant Response]
+    FR --> |"no match"| OC[OrchestratorCore]
+    OC --> SP{Specialized<br/>Router}
+    SP --> |"image"| IG[ImageGenerationCore]
+    SP --> |"design"| DES[DesignCore]
+    SP --> |"OS"| AC[AutomationCore]
+    SP --> |"default"| ROUTE{Primary<br/>Routing}
+    ROUTE --> |"GPU"| CC[CognitionCore<br/>Karsh]
+    ROUTE --> |"fault/timeout"| BC[BackupCore<br/>CPU]
+    ROUTE --> |"capacity"| BC
 ```
 
 ## Specialized Core Pre-routing
 
-Before reaching HybridCore, the orchestrator runs a keyword classifier:
+Before reaching the primary routing path, the orchestrator runs a keyword classifier:
 
 | Trigger keywords | Routed to |
 |---|---|
-| `generate image`, `draw`, `paint`, `render image` | ImageGenerationCore |
-| `design`, `layout`, `html`, `interface`, `webpage` | DesignCore |
-| `list files`, `run command`, `cpu usage`, `system info` | AutomationCore |
+| `generate image`, `draw`, `paint` | ImageGenerationCore |
+| `design`, `layout`, `html` | DesignCore |
+| `list files`, `run command`, `cpu usage` | AutomationCore |
 
-If none match → falls through to HybridCore (default LLM path).
+## Contingency Protocol
 
-## Module Boundary Rules
-
-- **Zero business logic** — OrchestratorCore never makes decisions about content
-- No direct model calls — always delegates to HybridCore or SpecializedCores
-- No direct DB queries — always delegates to DataCore
+| Trigger | Action |
+|---------|--------|
+| Primary fault | BackupCore takes over, status → DEGRADED |
+| Primary timeout (60s) | BackupCore takes over, status → DEGRADED |
+| Primary at capacity (2 concurrent) | BackupCore takes over, status stays HEALTHY |
+| Explicit `backup-1` | Direct BackupCore handover |
 
 ## Key File
 
-`OrchestratorCore.py` — 474 lines, 23.4KB
-
-## Event Topics Consumed
-
-- `Topics.USER_INPUT` — triggers the full pipeline
-
-## Event Topics Published
-
-- `Topics.TASK_CREATED` — after session is established
-- `Topics.TASK_COMPLETED` — on successful response
-- `Topics.TASK_FAILED` — on validation failure or exception
-- `Topics.ALERT` — on input validation rejection
-- `Topics.TOOL_REQUEST` / `Topics.tool_result_for(name)` — for tool calls
+`OrchestratorCore.py` — Main orchestrator with absorbed routing logic

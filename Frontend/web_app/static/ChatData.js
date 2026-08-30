@@ -1569,9 +1569,9 @@ window.startSovereignTraining = async function() {
   banner.textContent = `Training started — ${params.epochs} epochs · batch ${params.batch_size} · lr ${params.learning_rate} · device ${params.device}`;
   banner.style.display = 'block';
 
-  appendTrainLog('Initiating Sovereign GPT training pipeline...');
+  appendTrainLog('Initiating Karsh training pipeline...');
   $('train-log-status').textContent = 'Starting...';
-  logReplay('TRAIN', `Sovereign GPT training started — ${params.epochs}ep`);
+  logReplay('TRAIN', `Karsh training started — ${params.epochs}ep`);
 
   try {
     const resp = await fetch('/api/v1/model/train', {
@@ -1582,7 +1582,7 @@ window.startSovereignTraining = async function() {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     appendTrainLog(`Server: ${data.message || data.status}`);
-    showToast('Sovereign GPT training job started. Logs streaming via WebSocket.', 'success');
+    showToast('Karsh training job started. Logs streaming via WebSocket.', 'success');
     banner.className = 'train-banner running';
     banner.textContent = 'Training running in background — watch logs below';
   } catch (e) {

@@ -1,7 +1,7 @@
 """
 Vibhu-Oska AI-OS — Stage 2 Integration Tests
 Verifies the database connector, cache manager, DataCore, ValidationCore,
-BackupCore, HybridCore, and Orchestrator core event loops.
+BackupCore, and OrchestratorCore event loops.
 
 Run: python -m pytest Tests/test_brain_stem.py -v
 """
@@ -21,7 +21,7 @@ from Backend.Core.BackupCore.BackupCore import BackupCore
 from Backend.Core.EventBus.EventBus import EventBus
 from Backend.Core.EventBus.Events import Event, EventFactory
 from Backend.Core.EventBus.Topics import Topics
-from Backend.Core.MainCore.HybridCore.HybridCore import HybridCore
+from Backend.Core.MainCore.FastResponder.FastResponder import FastResponder
 from Backend.Core.MainCore.CognitionCore.cognition import CognitionCore
 from Backend.Core.MainCore.OrchestratorCore.OrchestratorCore import OrchestratorCore
 from Backend.Core.MainCore.ValidationCore.validation import ValidationCore
@@ -207,7 +207,55 @@ class TestValidationCore:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Test: BackupCore & HybridCore routing
+# Test: FastResponder (primary-path instant responder)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestFastResponder:
+    def test_instant_patterns(self):
+        fast = FastResponder()
+
+        # Math resolves inline
+        resp_math = fast.try_respond("Compute 5 + 5")
+        assert resp_math is not None
+        assert "10" in resp_math
+
+        resp_power = fast.try_respond("2 to the power of 10")
+        assert resp_power is not None and "1024" in resp_power
+
+        # Greeting
+        resp_greet = fast.try_respond("hello")
+        assert resp_greet is not None
+        assert "Vibhu-Oska" in resp_greet
+
+        # Help / commands
+        resp_help = fast.try_respond("help")
+        assert resp_help is not None
+        assert "Vibhu-Oska" in resp_help or "help" in resp_help.lower()
+
+        # Time / date
+        resp_time = fast.try_respond("what is the time?")
+        assert resp_time is not None
+        assert "timestamp" in resp_time.lower() or ":" in resp_time
+
+        # Acknowledgement
+        resp_ack = fast.try_respond("thanks")
+        assert resp_ack is not None
+        assert "Acknowledged" in resp_ack
+
+        # Open-ended / complex queries must fall through to OrchestratorCore routing
+        assert fast.try_respond("write a fastapi websocket server") is None
+        assert fast.try_respond("give me the status report for the queue") is None
+
+    def test_fast_responder_is_stateless_and_repeatable(self):
+        fast = FastResponder()
+        a = fast.try_respond("128 * 8")
+        b = fast.try_respond("128 * 8")
+        assert a == b
+        assert a is not None and "1024" in a
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Test: BackupCore & OrchestratorCore routing (absorbed from HybridCore)
 # ══════════════════════════════════════════════════════════════════════════════
 
 class TestCoreFailover:
@@ -215,41 +263,134 @@ class TestCoreFailover:
     async def test_backup_core_rules(self):
         backup = BackupCore()
 
-        # Test help/commands trigger — new BackupCore returns command reference, not stub text
+        # Test help/commands trigger — BackupCore delegates instant patterns to FastResponder
         resp_help = await backup.generate("Show me help info")
         assert resp_help.content  # non-empty
         assert resp_help.metadata.status.code == StatusCode.COMPLETED
-        # New BackupCore returns intelligent command reference with Vibhu-Oska branding
+        # BackupCore returns intelligent command reference with Vibhu-Oska branding
         assert "Vibhu-Oska" in resp_help.content or "help" in resp_help.content.lower()
 
-        # Test math evaluation — new BackupCore resolves arithmetic inline (no queue)
+        # Test math evaluation — BackupCore resolves arithmetic inline (delegated to FastResponder)
         resp_math = await backup.generate("Compute 5 + 5")
         assert resp_math.content  # non-empty
         assert resp_math.metadata.status.code == StatusCode.COMPLETED
-        # BackupCore now evaluates math directly and returns COMPLETED (no queue/PENDING)
+        # BackupCore evaluates math directly and returns COMPLETED (no queue/PENDING)
         assert "10" in resp_math.content or "compute" in resp_math.content.lower() or resp_math.content
 
     @pytest.mark.asyncio
-    async def test_hybrid_core_failover(self):
+    async def test_orchestrator_failover(self):
         class BrokenCognition(CognitionCore):
             async def generate(self, *args, **kwargs):
                 raise RuntimeError("Primary model inference offline")
 
         primary = BrokenCognition()
         backup = BackupCore()
-        hybrid = HybridCore(primary_cognition=primary, backup_core=backup)
-        await hybrid.initialize()
+        orch = OrchestratorCore()
+        orch._primary = primary
+        orch._backup = backup
+        orch._status = CoreStatus.HEALTHY
 
-        # Primary is down; HybridCore now routes all requests to BackupCore
-        # via speculative routing (model_id="backup-1") before even attempting primary
-        resp = await hybrid.process_request("hello")
+        # Strict protocol: primary is attempted FIRST. On fault, BackupCore takes
+        # over via the contingency handover (status -> DEGRADED).
+        resp = await orch._route_request("hello", "", None, "")
         assert resp.metadata.executed_on == ExecutionTarget.CPU
-        # BackupCore returns COMPLETED with a greeting — not the old stub message
         assert resp.content  # non-empty response
         assert resp.metadata.status.code == StatusCode.COMPLETED
-        # Status is DEGRADED only when primary was *attempted and failed*.
-        # New routing skips primary entirely for CHAT — status stays HEALTHY or DEGRADED
-        assert hybrid.status in (CoreStatus.HEALTHY, CoreStatus.DEGRADED)
+        # Handover must be stamped with the fault reason
+        assert "Contingency Handover (fault)" in resp.metadata.status.message
+        assert orch.status == CoreStatus.DEGRADED
+
+    @pytest.mark.asyncio
+    async def test_orchestrator_timeout_handover(self):
+        class SlowCognition(CognitionCore):
+            async def generate(self, *args, **kwargs):
+                await asyncio.sleep(30)
+
+        orch = OrchestratorCore()
+        orch._primary = SlowCognition()
+        orch._backup = BackupCore()
+        orch._primary_timeout = 0.05
+        orch._status = CoreStatus.HEALTHY
+
+        resp = await orch._route_request("hello", "", None, "")
+        assert resp.metadata.executed_on == ExecutionTarget.CPU
+        assert "Contingency Handover (timeout)" in resp.metadata.status.message
+        assert orch.status == CoreStatus.DEGRADED
+
+    @pytest.mark.asyncio
+    async def test_orchestrator_capacity_handover(self):
+        class CountingCognition(CognitionCore):
+            def __init__(self):
+                super().__init__()
+                self.called = False
+
+            async def generate(self, *args, **kwargs):
+                self.called = True
+                raise RuntimeError("should not be reached")
+
+        primary = CountingCognition()
+        orch = OrchestratorCore()
+        orch._primary = primary
+        orch._backup = BackupCore()
+        orch._status = CoreStatus.HEALTHY
+        # Simulate primary at capacity — BackupCore activates WITHOUT attempting primary
+        orch._max_concurrent_primary = 1
+        orch._primary_in_flight = 1
+
+        resp = await orch._route_request("hello", "", None, "")
+        assert primary.called is False
+        assert resp.metadata.executed_on == ExecutionTarget.CPU
+        assert "Contingency Handover (capacity)" in resp.metadata.status.message
+        # Capacity is not a primary failure — status remains HEALTHY
+        assert orch.status == CoreStatus.HEALTHY
+
+    @pytest.mark.asyncio
+    async def test_explicit_backup_request_handover(self):
+        class HealthyCognition(CognitionCore):
+            async def generate(self, *args, **kwargs):
+                raise AssertionError("explicit backup request must not hit primary")
+
+        orch = OrchestratorCore()
+        orch._primary = HealthyCognition()
+        orch._backup = BackupCore()
+        orch._status = CoreStatus.HEALTHY
+
+        resp = await orch._route_request("hello", "", None, "backup-1")
+        assert resp.metadata.executed_on == ExecutionTarget.CPU
+        assert "Contingency Handover (explicit)" in resp.metadata.status.message
+        assert resp.metadata.status.code == StatusCode.COMPLETED
+
+    @pytest.mark.asyncio
+    async def test_primary_healthy_routes_to_gpu(self):
+        class GoodCognition(CognitionCore):
+            async def generate(self, *args, **kwargs):
+                from Shared.Models import TaskResponse, TokenUsage, ResponseMetadata, Status, StatusCode
+                return TaskResponse(
+                    content="Primary engine response",
+                    token_usage=TokenUsage(prompt_tokens=1, completion_tokens=3, total_tokens=4),
+                    metadata=ResponseMetadata(
+                        status=Status(code=StatusCode.COMPLETED, message="Primary OK")
+                    ),
+                )
+
+        orch = OrchestratorCore()
+        orch._primary = GoodCognition()
+        orch._backup = BackupCore()
+        orch._status = CoreStatus.HEALTHY
+
+        resp = await orch._route_request("hello", "", None, "")
+        assert resp.metadata.executed_on == ExecutionTarget.GPU
+        assert "Primary engine response" in resp.content
+        assert orch.status == CoreStatus.HEALTHY
+        assert "Contingency Handover" not in resp.metadata.status.message
+
+    def test_shared_backup_instance_is_reused(self):
+        """OrchestratorCore must reuse the injected BackupCore instance — no per-request creation."""
+        backup = BackupCore()
+        orch = OrchestratorCore()
+        orch._primary = CognitionCore()
+        orch._backup = backup
+        assert orch.backup_core is backup
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -396,18 +537,18 @@ class TestGraphRAGAndSubCores:
         await bus.stop()
 
     @pytest.mark.asyncio
-    async def test_sovereign_gpt_generation(self):
+    async def test_karsh_generation(self):
         """
-        Verifies CognitionCore.generate_sovereign() behaviour when the checkpoint
+        Verifies CognitionCore.generate_karsh() behaviour when the checkpoint
         is stale / architecture-mismatched (1.56M params vs new 25M config).
-        The quality gate must raise RuntimeError so HybridCore can fall to BackupCore.
+        The quality gate must raise RuntimeError so OrchestratorCore can fall to BackupCore.
         This test documents expected degraded-mode behaviour; it will pass cleanly
-        once Sovereign GPT is retrained on the 25M architecture.
+        once Karsh is retrained on the 25M architecture.
         """
         import pytest
         cognition = CognitionCore()
         await cognition.initialize()
         # The old 1.56M checkpoint produces < 50-char gibberish on the new 25M arch.
         # CognitionCore's quality gate should raise RuntimeError (not silently return garbage).
-        with pytest.raises(RuntimeError, match="Sovereign GPT output too short"):
-            await cognition.generate(prompt="Vibhu-Oska", model_id="sovereign-gpt")
+        with pytest.raises(RuntimeError, match="Karsh (output too short|checkpoints missing|checkpoint too small)"):
+            await cognition.generate(prompt="Vibhu-Oska", model_id="karsh")

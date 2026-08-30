@@ -15,6 +15,7 @@ import chromadb
 
 from Backend.Plugins.ConfigLoader.ConfigLoader import ConfigLoader
 from Backend.Plugins.ToolRegistry.Registry import ToolRegistry
+from Backend.Core.SpecializedCore.DataCore.grag import GRAGEngine
 
 
 class DataCore:
@@ -30,6 +31,7 @@ class DataCore:
         self._chroma_client: chromadb.PersistentClient | None = None
         self._default_collection_name = "vibhu_oska_memory"
         self._initialized = False
+        self._grag: GRAGEngine | None = None
 
     async def initialize(self, registry: ToolRegistry) -> None:
         """Initialize connection to relational DB connector, cache manager, and vector DB."""
@@ -50,6 +52,10 @@ class DataCore:
 
         # Initialize ChromaDB in thread pool
         await asyncio.to_thread(self._init_chroma, persist_dir)
+
+        # Initialize GRAG (Graph RAG) engine
+        self._grag = GRAGEngine()
+        await self._grag.initialize()
 
         # Run warm cache preloading
         await self.warm_cache()
@@ -91,7 +97,7 @@ class DataCore:
         content: str,
         metadata: dict[str, Any] | None = None
     ) -> None:
-        """Save a new chat message and update the session updated time."""
+        """Save a new chat message, update session timestamp, and auto-ingest into GRAG."""
         meta_json = json.dumps(metadata or {})
         query = """
             INSERT INTO chats (message_id, session_id, role, content, timestamp, token_count, metadata_json)
@@ -105,6 +111,13 @@ class DataCore:
 
         # Invalidate the cache for this session's history
         await self._cache.execute("delete", key=f"session_history:{session_id}")
+
+        # Auto-extract entities into GRAG (fire-and-forget, don't block save)
+        if role == "user" and self._grag:
+            try:
+                await self._grag.ingest(content, source=f"chat:{session_id}")
+            except Exception:
+                pass
 
     async def get_session_history(self, session_id: str, limit: int = 20) -> list[dict[str, Any]]:
         """Get recent chat message history for a session, checking cache first."""
@@ -280,13 +293,23 @@ class DataCore:
 
     async def query_knowledge_graph(self, query_text: str) -> str:
         """
-        Retrieves matching entities and their 1-hop relationships from the SQLite Knowledge Graph.
+        Full Graph RAG query: local (entity-centric), global (community summary), or DRIFT (adaptive).
+        Falls back to SQLite KG if GRAG unavailable.
         """
         if not self._initialized:
             return ""
 
+        # ── GRAG path (primary) ────────────────────────────────────────
+        if self._grag and self._grag._initialized:
+            try:
+                result = await self._grag.query(query_text)
+                if result.context:
+                    return result.context
+            except Exception:
+                pass  # fall through to SQLite
+
+        # ── SQLite fallback (legacy) ──────────────────────────────────
         try:
-            # Get all nodes to match against
             nodes = await self._db.execute("query", query="SELECT entity, type, description FROM kg_nodes")
             if not nodes:
                 return ""
@@ -295,11 +318,9 @@ class DataCore:
             query_lower = query_text.lower()
             for node in nodes:
                 entity = node["entity"]
-                # Case-insensitive substring match
                 if entity.lower() in query_lower:
                     matched_entities.append(entity)
                 else:
-                    # Also check individual words for person names (e.g. "Harsh" matches "Harsh Dev Jha")
                     words = entity.split()
                     if len(words) > 1 and any(w.lower() in query_lower for w in words if len(w) > 3):
                         matched_entities.append(entity)
@@ -307,15 +328,12 @@ class DataCore:
             if not matched_entities:
                 return ""
 
-            # Dedup matched entities
             matched_entities = list(set(matched_entities))
 
-            # Retrieve nodes details
             placeholders = ",".join("?" for _ in matched_entities)
             nodes_query = f"SELECT entity, type, description FROM kg_nodes WHERE entity IN ({placeholders})"
             matched_nodes = await self._db.execute("query", query=nodes_query, params=tuple(matched_entities))
 
-            # Retrieve 1-hop edges
             edges_query = f"""
                 SELECT source, target, relation, weight 
                 FROM kg_edges 
@@ -324,12 +342,11 @@ class DataCore:
             params = tuple(matched_entities) + tuple(matched_entities)
             matched_edges = await self._db.execute("query", query=edges_query, params=params)
 
-            # Format context
             lines = ["Knowledge Graph Context:"]
             lines.append("Entities:")
             for node in matched_nodes:
                 lines.append(f"- {node['entity']} ({node['type']}): {node['description']}")
-            
+
             if matched_edges:
                 lines.append("Relationships:")
                 for edge in matched_edges:
@@ -338,5 +355,40 @@ class DataCore:
             return "\n".join(lines)
 
         except Exception as e:
-            # Log or handle exception gracefully
             return f"Error retrieving knowledge graph context: {str(e)}"
+
+    # ══════════════════════════════════════════════════════════════════════
+    # GRAG Auto-Ingestion (extracts entities from chat messages)
+    # ══════════════════════════════════════════════════════════════════════
+
+    async def ingest_to_grag(self, content: str, source: str = "chat") -> dict[str, Any] | None:
+        """Auto-extract entities and relationships from text into the GRAG graph.
+        Called automatically when saving chat messages to keep the graph fresh.
+        """
+        if not self._grag or not self._grag._initialized:
+            return None
+
+        try:
+            return await self._grag.ingest(content, source=source)
+        except Exception:
+            return None
+
+    async def query_grag(self, query_text: str, search_type: str = "auto") -> dict[str, Any]:
+        """Direct GRAG query with explicit search type control.
+
+        search_type: "local" | "global" | "drift" | "auto"
+        Returns: {"answer": str, "entities": list, "search_type": str, "confidence": float}
+        """
+        if not self._grag or not self._grag._initialized:
+            return {"answer": "", "entities": [], "search_type": search_type, "confidence": 0.0}
+
+        try:
+            result = await self._grag.query(query_text, search_type=search_type)
+            return {
+                "answer": result.context,
+                "entities": [e.text for e in result.entities],
+                "search_type": result.search_type,
+                "confidence": result.confidence,
+            }
+        except Exception:
+            return {"answer": "", "entities": [], "search_type": search_type, "confidence": 0.0}

@@ -14,10 +14,9 @@ assignees: ''
 
 ## Which Vibhu-Oska core does this affect?
 
-- [ ] CognitionCore (Sovereign GPT inference)
+- [ ] CognitionCore (Karsh inference)
 - [ ] BackupCore (instant CPU fallback)
-- [ ] HybridCore (routing)
-- [ ] OrchestratorCore (task pipeline)
+- [ ] OrchestratorCore (task pipeline + routing)
 - [ ] DataCore (ChromaDB / SQLite memory)
 - [ ] AutomationCore (OS operations)
 - [ ] DesignCore (UI generation)
@@ -25,7 +24,7 @@ assignees: ''
 - [ ] DistributionCore (Stubvi)
 - [ ] Gateway / WebSocket API
 - [ ] Frontend dashboard
-- [ ] Training pipeline (Sovereign GPT)
+- [ ] Training pipeline (Karsh)
 - [ ] Other (describe below)
 
 ## Expected behaviour after implementation

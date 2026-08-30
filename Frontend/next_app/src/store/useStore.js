@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 export const useStore = create((set, get) => ({
   // Navigation
-  activePage: 'dashboard', // dashboard | config | playground | research | code | sandbox | admin | docs
+  activePage: 'dashboard', // dashboard | config | playground | research | code | sandbox | admin | docs | training
   setActivePage: (page) => set({ activePage: page }),
 
   // Telemetry (Real-time hardware data fetched from backend)
@@ -16,26 +16,18 @@ export const useStore = create((set, get) => ({
   },
   setTelemetry: (telemetry) => set({ telemetry }),
 
-  // Local Model Training Metrics
-  training: {
-    active: false,
-    epoch: 0,
-    maxEpochs: 10,
-    step: 0,
-    loss: 4.5,
-    throughput: 0,
-    logs: [],
-    lossHistory: []
-  },
-  startTraining: () => set((state) => ({
-    training: { ...state.training, active: true, epoch: 0, step: 0, loss: 4.5, logs: ['Training initialized locally.'], lossHistory: [] }
+  // Real-time Training State (driven by WS events + API status)
+  trainingActive: false,
+  trainingLogs: [],
+  trainingStartedAt: null,
+  appendTrainingLog: (log) => set((state) => ({
+    trainingLogs: [...state.trainingLogs, log].slice(-100)
   })),
-  stopTraining: () => set((state) => ({
-    training: { ...state.training, active: false }
+  setTrainingStatus: (active) => set((state) => ({
+    trainingActive: active,
+    trainingStartedAt: active ? new Date().toISOString() : state.trainingStartedAt
   })),
-  updateTrainingMetrics: (metrics) => set((state) => ({
-    training: { ...state.training, ...metrics }
-  })),
+  clearTrainingLogs: () => set({ trainingLogs: [] }),
 
   // Local Chat / Playground (ChatGPT/Gemini style)
   chatHistory: [

@@ -140,7 +140,7 @@ message RouterRequest {
 
 message RouterPrediction {
   string task_type = 1;       // CHAT | CODE | OS | DESIGN | IMAGE
-  string target_model = 2;    // sovereign-gpt | vibhu-core | backup
+  string target_model = 2;    // sara | vibhu-core | backup
   float task_confidence = 3;
   float target_confidence = 4;
 }

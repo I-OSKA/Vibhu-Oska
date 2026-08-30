@@ -14,32 +14,32 @@ CognitionCore is the **only** place in the system where model weights are access
 ```
 generate(prompt, system_prompt, context, model_id)
           ↓
-model_id == "sovereign-gpt"?  → generate_sovereign()
+model_id == "sara"?  → generate_sara()
 model_id == "vibhu-core"?     → generate_direct() [Qwen2.5-0.5B]
 model_id == "" (default)?     → auto-fallback chain:
-    1. Check sovereign_gpt.pt exists → generate_sovereign()
+    1. Check sara.pt exists → generate_sara()
        ↓ fails
     2. Load Qwen2.5-0.5B in-process → generate_direct()
        ↓ fails
     3. Raise exception → HybridCore catches → BackupCore
 ```
 
-## Sovereign GPT Inference Path
+## SARA Inference Path
 
 ```python
-async def generate_sovereign(self, prompt, system_prompt, context, ...):
+async def generate_sara(self, prompt, system_prompt, context, ...):
     # 1. Check checkpoints exist:
-    #    Models/sovereign_gpt/checkpoints/sovereign_gpt.pt
-    #    Models/sovereign_gpt/checkpoints/tokenizer_vocab.json
+    #    Models/sara/checkpoints/sara.pt
+    #    Models/sara/checkpoints/tokenizer_vocab.json
     #    → Missing: return error TaskResponse (no crash)
     
-    # 2. Lazy-load SovereignGPTGenerator (first call only)
-    self._sovereign_generator = SovereignGPTGenerator(checkpoints_dir)
+    # 2. Lazy-load SaraGPTGenerator (first call only)
+    self._sara_generator = SaraGPTGenerator(checkpoints_dir)
     
     # 3. Format prompt: "Context:\n- ...\n\nQuery: {prompt}\nResponse:"
     
     # 4. Run generation in asyncio.to_thread() (non-blocking)
-    output = await asyncio.to_thread(self._sovereign_generator.generate, ...)
+    output = await asyncio.to_thread(self._sara_generator.generate, ...)
     
     # 5. Return TaskResponse with content + token counts
 ```
@@ -60,7 +60,7 @@ async def generate_direct(self, prompt, system_prompt, context, ...):
 
 ## Corpus Spell Checker
 
-CognitionCore includes a Norvig-style probabilistic spell checker. It's seeded with ~600 common English words plus domain terms from `Data/training/sovereign_gpt/corpus.txt`.
+CognitionCore includes a Norvig-style probabilistic spell checker. It's seeded with ~600 common English words plus domain terms from `Data/training/sara/corpus.txt`.
 
 ```python
 typo_info = self._spell_checker.find_typo(prompt)
@@ -94,7 +94,7 @@ async def process_request(self, prompt, system_prompt, context, model_id):
 def _load_router(self):
     # Lazy — runs only once on first request
     # Loads Models/router/checkpoints/best_router.pt
-    # Loads Models/router/checkpoints/router_vocab.json (SovereignBPETokenizer)
+    # Loads Models/router/checkpoints/router_vocab.json (SaraBPETokenizer)
     # Creates VibhuOskaRouter in eval() mode
 ```
 
@@ -117,7 +117,7 @@ Size: 5.8KB
 
 CPU-only fallback. No GPU, no ML libraries. Pattern-matching responses for basic queries. Marks all responses with `executed_on = ExecutionTarget.CPU`.
 
-## Sovereign GPT Architecture
+## SARA Architecture
 
 Custom decoder-only transformer built from PyTorch primitives:
 
@@ -139,11 +139,11 @@ Softmax → Token probabilities → Sample (temperature, top-k, top-p)
 
 **Default config**: vocab=4000, hidden=256, 6 layers, 8 heads, max_seq=256 → ~5MB model
 
-**SovereignBPETokenizer**: Custom BPE tokenizer trained on the corpus, not tiktoken. Encodes/decodes with the same vocabulary used during model training. Saved as `tokenizer_vocab.json`.
+**SaraBPETokenizer**: Custom BPE tokenizer trained on the corpus, not tiktoken. Encodes/decodes with the same vocabulary used during model training. Saved as `tokenizer_vocab.json`.
 
 ## Router Model Architecture
 
 A compact encoder transformer with dual classification heads:
 - Shared transformer backbone (3 layers, 64 hidden)
 - Task head: softmax over [CHAT, CODE, OS, DESIGN, IMAGE]
-- Target head: softmax over [sovereign-gpt, vibhu-core, backup]
+- Target head: softmax over [sara, vibhu-core, backup]

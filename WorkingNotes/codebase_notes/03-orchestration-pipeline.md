@@ -41,7 +41,7 @@ Step 5:  _route_to_specialized_core(prompt, context)
 Step 6:  HybridCore.process_request(prompt, context, model_id)
          → [Only if Step 5 returned None]
          → Speculative routing via Router model → assigns model_id
-         → Primary: CognitionCore.generate() → Sovereign GPT or Qwen
+         → Primary: CognitionCore.generate() → SARA or Qwen
          → Fallback: BackupCore.generate() on any exception
 
 Step 7:  ValidationCore.validate_ai_output(response)

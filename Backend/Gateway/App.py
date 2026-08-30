@@ -27,10 +27,11 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks, Depends, Request, Query
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 
 from Backend.Core.EventBus.EventBus import EventBus
@@ -44,6 +45,7 @@ from Backend.Plugins.ToolRegistry.Registry import ToolRegistry
 from Backend.Plugins.DatabaseConnector.DatabaseConnector import DatabaseConnector
 from Backend.Plugins.CacheManager.CacheManager import CacheManager
 from Backend.Core.MainCore.CognitionCore.cognition import CognitionCore
+from Backend.Core.MainCore.FastResponder.FastResponder import FastResponder
 from Backend.Core.MainCore.OrchestratorCore.OrchestratorCore import OrchestratorCore
 from Backend.Core.SpecializedCore.DataCore.datacore import DataCore
 from Backend.Plugins.SearchEngine.SearchEngine import SearchEngine
@@ -122,7 +124,73 @@ class StatusResponse(BaseModel):
     event_bus: dict[str, Any]
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
+# Authentication Models & Dependencies
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class LoginRequest(BaseModel):
+    user_id: str
+    password: str = ""
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    user_id: str
+    role: str
+
+class TokenData(BaseModel):
+    user_id: str
+    role: str
+    scopes: list[str] = []
+
+security = HTTPBearer(auto_error=False)
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> TokenData:
+    auth_manager = state.registry.get_safe("auth_manager")
+    if not auth_manager:
+        raise HTTPException(status_code=503, detail="Authentication service unavailable")
+    payload = await auth_manager.execute("verify_token", token=credentials.credentials)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return TokenData(
+        user_id=payload.get("sub", ""),
+        role=payload.get("role", "visitor"),
+        scopes=payload.get("scopes", []),
+    )
+
+async def get_current_user_ws(
+    websocket: WebSocket,
+    token: str = Query(...),
+) -> TokenData:
+    auth_manager = state.registry.get_safe("auth_manager")
+    if not auth_manager:
+        await websocket.close(code=1011, reason="Auth service unavailable")
+        return None
+    payload = await auth_manager.execute("verify_token", token=token)
+    if not payload:
+        await websocket.close(code=1008, reason="Invalid or expired token")
+        return None
+    return TokenData(
+        user_id=payload.get("sub", ""),
+        role=payload.get("role", "visitor"),
+        scopes=payload.get("scopes", []),
+    )
+
+PUBLIC_PATHS = {
+    "/health",
+    "/status",
+    "/",
+    "/auth/login",
+    "/docs",
+"/openapi.json",
+    "/redoc",
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Application Lifecycle
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -255,6 +323,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# JWT Auth middleware
+@app.middleware("http")
+async def jwt_auth_middleware(request: Request, call_next):
+    if request.url.path in PUBLIC_PATHS or request.url.path.startswith("/static"):
+        return await call_next(request)
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Missing or invalid Authorization header"},
+        )
+    token = auth_header[7:]
+    auth_manager = state.registry.get_safe("auth_manager")
+    if not auth_manager:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Authentication service unavailable"},
+        )
+    payload = await auth_manager.execute("verify_token", token=token)
+    if not payload:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Invalid or expired token"},
+        )
+    request.state.user_id = payload.get("sub", "")
+    request.state.user_role = payload.get("role", "visitor")
+    request.state.user_scopes = payload.get("scopes", [])
+
+    return await call_next(request)
+
 # Serve static files and index template
 project_root = Path(__file__).resolve().parent.parent.parent
 static_dir = project_root / "Frontend" / "web_app" / "static"
@@ -306,6 +404,37 @@ async def system_status():
             "ws_clients_connected": len(state.ws_clients),
         },
     )
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Authentication Routes
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/auth/login", response_model=LoginResponse, tags=["Auth"])
+async def login(request: LoginRequest):
+    """Generate a JWT access token for the given user."""
+    auth_manager = state.registry.get_safe("auth_manager")
+    if not auth_manager:
+        raise HTTPException(status_code=503, detail="Authentication service unavailable")
+
+    expiry = 86400
+    token = await auth_manager.execute(
+        "generate_token",
+        user_id=request.user_id,
+        role="operator",
+        scopes=["chat", "memory", "system"],
+        expiry=expiry,
+    )
+
+    return LoginResponse(
+        access_token=token,
+        token_type="bearer",
+        expires_in=expiry,
+        user_id=request.user_id,
+        role="operator",
+    )
+
+
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -626,12 +755,12 @@ class CorpusAppendRequest(BaseModel):
 @app.post("/api/v1/corpus/append", tags=["AI"])
 async def append_corpus(req: CorpusAppendRequest):
     """
-    Append new text to the Sovereign GPT training corpus.
+    Append new text to the Karsh training corpus.
     If format=qa, wraps the text in Query/Response scaffold.
     Also automatically stores the text in ChromaDB semantic memory.
     """
     from pathlib import Path
-    corpus_path = Path(state.config.project_root) / "Data" / "training" / "sovereign_gpt" / "corpus.txt"
+    corpus_path = Path(state.config.project_root) / "Data" / "training" / "karsh" / "corpus.txt"
     corpus_path.parent.mkdir(parents=True, exist_ok=True)
 
     text = req.text.strip()
@@ -741,13 +870,16 @@ async def trigger_model_training(req: ModelTrainRequest, background_tasks: Backg
         raise HTTPException(status_code=400, detail="Training is already in progress.")
 
     state.training_in_progress = True
+    state.training_started_at = time.time()
+    state.training_last_log = "Training initialized..."
     main_loop = asyncio.get_running_loop()
 
     def run_training():
-        from Models.sovereign_gpt.train import train as train_model
+        from Models.karsh.train import train as train_model
         from pathlib import Path
 
         def callback(msg: str):
+            state.training_last_log = msg
             async def publish_log():
                 event = Event(
                     topic="system.model_training_log",
@@ -763,11 +895,11 @@ async def trigger_model_training(req: ModelTrainRequest, background_tasks: Backg
                 print(f"Error publishing training log: {ex}")
 
         try:
-            callback("Starting Vibhu-Oska Sovereign GPT training pipeline...")
+            callback("Starting Vibhu-Oska Karsh training pipeline...")
             
             root = Path(__file__).resolve().parent.parent.parent
-            corpus_file = root / "Data" / "training" / "sovereign_gpt" / "corpus.txt"
-            checkpoints = root / "Models" / "sovereign_gpt" / "checkpoints"
+            corpus_file = root / "Data" / "training" / "karsh" / "corpus.txt"
+            checkpoints = root / "Models" / "karsh" / "checkpoints"
             
             try:
                 lr_val = float(req.learning_rate)
@@ -787,7 +919,7 @@ async def trigger_model_training(req: ModelTrainRequest, background_tasks: Backg
                 vocab_size=req.vocab_size,
                 progress_callback=callback
             )
-            callback("[SUCCESS] Sovereign GPT training pipeline completed successfully!")
+            callback("[SUCCESS] Karsh training pipeline completed successfully!")
         except Exception as e:
             callback(f"[ERROR] Training failed: {str(e)}")
         finally:
@@ -795,6 +927,20 @@ async def trigger_model_training(req: ModelTrainRequest, background_tasks: Backg
 
     background_tasks.add_task(run_training)
     return {"status": "started", "message": "Training has been initiated in background."}
+
+
+# ──────────────────────────────────────────────
+# Training Status Endpoint
+# ──────────────────────────────────────────────
+
+@app.get("/api/v1/training/status", tags=["AI"])
+async def get_training_status():
+    """Get current training status for the dashboard."""
+    return {
+        "in_progress": getattr(state, "training_in_progress", False),
+        "last_log": getattr(state, "training_last_log", None),
+        "started_at": getattr(state, "training_started_at", None)
+    }
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -900,7 +1046,7 @@ async def _process_prompt_direct(
     request_id: str,
 ) -> str:
     """
-    Directly invoke HybridCore → BackupCore/CognitionCore and return the response string.
+    Directly invoke OrchestratorCore routing → BackupCore/CognitionCore and return the response string.
     Bypasses the EventBus entirely for the primary response path — no async scheduling gaps.
 
     Parameters:
@@ -947,8 +1093,9 @@ async def _process_prompt_direct(
             content = specialized.content
         else:
             # ── Fast pre-dispatch ────────────────────────────────────────────────
-            # Intercept prompts BackupCore handles instantly — skips router + Qwen load.
-            # Only falls through to HybridCore for prompts needing real LLM reasoning.
+            # FastResponder intercepts deterministic instant patterns on the PRIMARY
+            # path. BackupCore is never touched here — it is strict contingency only.
+             # Falls through to OrchestratorCore routing for prompts needing full reasoning.
             content = _try_fast_dispatch(prompt)
             if content is None:
                 system_prompt = (
@@ -956,7 +1103,7 @@ async def _process_prompt_direct(
                     "Respond accurately, concisely, and professionally. Never reference being an AI assistant "
                     "or external cloud service. You run entirely on the creator's local hardware."
                 )
-                task_resp = await state.orchestrator._hybrid_core.process_request(
+                task_resp = await state.orchestrator._route_request(
                     prompt=prompt,
                     system_prompt=system_prompt,
                     context=context,
@@ -978,89 +1125,32 @@ async def _process_prompt_direct(
         log.error("Direct processing error", error=str(e))
         return (
             f"\u26a0 Processing error: `{str(e)[:120]}`\n\n"
-            "Vibhu-Oska BackupCore is active. The Sovereign GPT model requires training. "
+            "Vibhu-Oska BackupCore is active. The Karsh model requires training. "
             "Use the **Train** panel to initiate model training."
         )
 
 
+# Shared FastResponder singleton — primary-path instant responder.
+# NOTE: This must not be confused with BackupCore. FastResponder carries ONLY
+# deterministic instant patterns; BackupCore is a strict contingency layer.
+_fast_responder = FastResponder()
+
+
 def _try_fast_dispatch(prompt: str) -> str | None:
     """
-    Attempt to resolve a prompt instantly via BackupCore pattern matching,
-    bypassing HybridCore router inference and any LLM loading cost.
+    Attempt to resolve a prompt instantly via the FastResponder (primary path),
+    bypassing OrchestratorCore router inference and any LLM loading cost.
+
+    FastResponder is a lightweight deterministic responder that lives on the
+    PRIMARY intelligence surface. BackupCore is NOT invoked here — it remains a
+    strict contingency layer (fault / capacity / timeout) via OrchestratorCore routing.
 
     Parameters:
         prompt: Raw user input string
-    Returns: Response string if pattern matched, None to fall through to HybridCore
+    Returns: Response string if pattern matched, None to fall through to OrchestratorCore routing
     Edge cases: Returns None for open-ended or complex queries needing LLM
     """
-    import re, math as _math
-
-    norm = prompt.strip().lower()
-
-    # ── Math expressions ─────────────────────────────────────────────────────
-    # Handle before anything else — avoids 30s Qwen cold-start for "128 * 8"
-    if re.search(r'\d', prompt):
-        # Arithmetic: "128 * 8", "2^10", "100 / 4", "15 % 7"
-        expr = re.search(
-            r'(\d+\.?\d*)\s*([\+\-\*\/\^%]|\*\*|//)\s*(\d+\.?\d*)',
-            prompt.replace('×', '*').replace('÷', '/').replace('^', '**')
-        )
-        if expr:
-            try:
-                a, op, b = float(expr.group(1)), expr.group(2), float(expr.group(3))
-                ops = {'+': a+b, '-': a-b, '*': a*b, '^': a**b, '**': a**b,
-                       '%': a%b}
-                if op in ('/', '÷'):
-                    result = "undefined (division by zero)" if b == 0 else a / b
-                elif op == '//':
-                    result = int(a) // int(b)
-                else:
-                    result = ops.get(op)
-                if result is not None:
-                    display = int(result) if isinstance(result, float) and result == int(result) else (
-                        round(result, 6) if isinstance(result, float) else result
-                    )
-                    return f"`{expr.group(1)} {op} {expr.group(3)}` = **`{display}`**"
-            except Exception:
-                pass
-
-        if re.search(r'\b(sqrt|square root of)\b', norm):
-            n = re.search(r'(\d+\.?\d*)', prompt)
-            if n:
-                val = _math.sqrt(float(n.group(1)))
-                display = int(val) if val == int(val) else round(val, 6)
-                return f"\u221a{n.group(1)} = **`{display}`**"
-
-        if re.search(r'\bfactorial\b', norm) or re.search(r'\b(\d+)!\s*$', prompt):
-            n = re.search(r'(\d+)', prompt)
-            if n and int(n.group(1)) <= 25:
-                return f"`{n.group(1)}!` = **`{_math.factorial(int(n.group(1)))}`**"
-
-    # ── Instant conversational patterns ──────────────────────────────────────
-    # These would hit router → CHAT → BackupCore anyway; save the round-trip.
-    from Backend.Core.BackupCore.BackupCore import BackupCore as _BC
-    _bc = _BC()
-
-    if re.search(r'^\s*(hello|hi|hey|yo|sup|greetings|good\s*(morning|afternoon|evening|night))\s*[!.,?]?\s*$', norm):
-        return _bc._reason(prompt)
-
-    if re.search(r'\b(who are you|what are you|tell me about yourself|what is vibhu|what can you do|your capabilities)\b', norm):
-        return _bc._reason(prompt)
-
-    if re.search(r'^\s*(status|health|how are you|are you (ok|working|online|alive|up))\s*[!.,?]?\s*$', norm):
-        return _bc._reason(prompt)
-
-    if re.search(r'^(what is the )?(time|date|current time|today)\??\s*$', norm):
-        return _bc._reason(prompt)
-
-    if re.search(r'^\s*(help|commands|what can you do)\s*[!.,?]?\s*$', norm):
-        return _bc._reason(prompt)
-
-    if re.search(r'^\s*(ok|okay|got it|understood|thanks|thank you|great|nice|cool|awesome|perfect|sure|alright)\s*[!.,?]?\s*$', norm):
-        return "Acknowledged. What would you like to work on?"
-
-    # ── Let HybridCore handle the rest ───────────────────────────────────────
-    return None
+    return _fast_responder.try_respond(prompt)
 
 
 
@@ -1099,4 +1189,134 @@ async def _broadcast_event_to_others(origin: WebSocket, message: dict) -> None:
         except Exception:
             disconnected.add(ws)
     state.ws_clients -= disconnected
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# WebSocket Streaming — Token-by-Token Response
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@app.websocket("/ws/stream")
+async def websocket_stream_endpoint(websocket: WebSocket):
+    """
+    Streaming WebSocket endpoint — sends response tokens one by one.
+
+    Protocol:
+        Client sends: {"prompt": "...", "session_id": "..."}
+        Server sends: {"type": "token", "content": "..."} for each chunk
+        Server sends: {"type": "stream.done", "content": "full response"} when complete
+        Server sends: {"type": "stream.error", "error": "..."} on failure
+
+    This enables real-time token-by-token display in the frontend.
+    """
+    await websocket.accept()
+    state.ws_clients.add(websocket)
+    log = Logger.get("WebSocketStream")
+    log.info("Stream client connected", total_clients=len(state.ws_clients))
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+
+            if "prompt" in data:
+                prompt = data["prompt"]
+                session_id = data.get("session_id", str(uuid.uuid4()))
+                request_id = str(uuid.uuid4__)
+
+                # ACK
+                await websocket.send_json({
+                    "type": "stream.ack",
+                    "request_id": request_id,
+                })
+
+                start_ms = int(__import__("time").time() * 1000)
+                try:
+                    # Persist user message
+                    await state.orchestrator._data_core.create_session(session_id, "operator")
+                    await state.orchestrator._data_core.save_chat_message(str(uuid.uuid4()), session_id, "user", prompt)
+
+                    # Retrieve context for streaming
+                    history = await state.orchestrator._data_core.get_session_history(session_id, limit=4)
+                    sem_ctx = await state.orchestrator._data_core.query_memory(prompt, top_k=1)
+                    kg_ctx = await state.orchestrator._data_core.query_knowledge_graph(prompt)
+                    context: list[dict] = []
+                    for msg in history:
+                        context.append({"source": f"chat:{msg['role']}", "content": msg["content"]})
+                    context.extend(sem_ctx)
+                    if kg_ctx:
+                        context.append({"source": "knowledge_graph", "content": kg_ctx})
+                    context = await state.orchestrator._optimization.optimize_prompt_context(context)
+
+                    system_prompt = (
+                        "You are Vibhu-Oska AI-OS -- a sovereign, locally-hosted artificial intelligence. "
+                        "Respond accurately, concisely, and professionally. Never reference being an AI assistant "
+                        "or external cloud service. You run entirely on the creator's local hardware."
+                    )
+
+                    token_index = 0
+                    full_response = ""
+                    model_id = data.get("model_id", "")
+
+                    async for result in state.orchestrator._route_request_stream(
+                        prompt=prompt,
+                        system_prompt=system_prompt,
+                        context=context,
+                        model_id=model_id,
+                    ):
+                        if isinstance(result, tuple):
+                            token_id, accumulated = result
+                            full_response = accumulated
+                            await websocket.send_json({
+                                "type": "token",
+                                "content": accumulated,
+                                "token_id": token_id,
+                                "index": token_index,
+                            })
+                            token_index += 1
+                        else:
+                            # Fallback: full text from BackupCore (non-streaming)
+                            full_response = result
+                            chunk_size = 8
+                            for i in range(0, len(full_response), chunk_size):
+                                chunk = full_response[i:i + chunk_size]
+                                await websocket.send_json({
+                                    "type": "token",
+                                    "content": chunk,
+                                    "index": i // chunk_size,
+                                })
+                                if i + chunk_size < len(full_response):
+                                    await asyncio.sleep(0.02)
+
+                    elapsed = int(__import__("time").time() * 1000) - start_ms
+
+                    # Persist assistant response
+                    await state.orchestrator._data_core.save_chat_message(str(uuid.uuid4()), session_id, "assistant", full_response)
+
+                    # Cache
+                    await state.orchestrator._optimization.save_response_cache(prompt, full_response)
+
+                    await websocket.send_json({
+                        "type": "stream.done",
+                        "content": full_response,
+                        "request_id": request_id,
+                        "metadata": {
+                            "processing_time_ms": elapsed,
+                            "total_tokens": token_index,
+                        },
+                    })
+
+                except Exception as proc_err:
+                    log.error("Stream processing failed", error=str(proc_err))
+                    await websocket.send_json({
+                        "type": "stream.error",
+                        "error": str(proc_err)[:200],
+                        "request_id": request_id,
+                    })
+
+    except WebSocketDisconnect:
+        state.ws_clients.discard(websocket)
+        log.info("Stream client disconnected", remaining_clients=len(state.ws_clients))
+    except Exception as e:
+        state.ws_clients.discard(websocket)
+        log.error("Stream WebSocket error", error=str(e))
 

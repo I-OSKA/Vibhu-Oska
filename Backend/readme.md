@@ -15,10 +15,10 @@ Backend/
 │   ├── Watchdog/          ← Service health daemon with auto-restart
 │   ├── BackupCore/        ← CPU-based rules fallback when GPU cores fail
 │   └── MainCore/          ← The primary intelligence pipeline
-│       ├── HybridCore/        ← Health routing + speculative dispatch
-│       ├── OrchestratorCore/  ← Double-validation request lifecycle manager
+│       ├── OrchestratorCore/  ← Brahma: routing + pipeline coordination
+│       ├── CognitionCore/     ← Vishnu: Karsh LLM inference
+│       ├── EvolutionCore/     ← Shiva: self-improvement via RL
 │       ├── ValidationCore/    ← Input sanitization + output schema enforcement
-│       ├── CognitionCore/     ← Sovereign GPT + Qwen2.5 inference interface
 │       ├── MonitoringCore/    ← EventBus subscriber + SQLite telemetry sink
 │       └── OptimizationCore/  ← LRU query cache + context compression
 │   └── SpecializedCore/   ← Domain-specific execution engines

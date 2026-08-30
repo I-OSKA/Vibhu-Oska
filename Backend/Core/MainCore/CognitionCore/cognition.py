@@ -1,6 +1,6 @@
 """
-Vibhu-Oska AI-OS — CognitionCore
-Primary inference interface for Sovereign GPT — built entirely from scratch.
+Vibhu-Oska AI-OS — CognitionCore (Vishnu — The Preserver)
+Primary inference interface for Karsh (कर्ष) — the creative intelligence of the system.
 No external models, no HuggingFace, no cloud APIs. Pure PyTorch primitives.
 """
 
@@ -19,6 +19,20 @@ from Backend.Plugins.ConfigLoader.ConfigLoader import ConfigLoader
 from Backend.Plugins.ToolRegistry.BaseService import BaseService
 from Backend.Plugins.Logger.Logger import Logger
 from Shared.Models import TaskResponse, TokenUsage, ResponseMetadata, Status, StatusCode, PluginInfo, CoreStatus, ExecutionTarget
+
+# Lazy import for DeepThought to avoid circular imports
+_deep_thought_engine = None
+
+def _get_deep_thought():
+    """Lazy import of DeepThoughtEngine."""
+    global _deep_thought_engine
+    if _deep_thought_engine is None:
+        try:
+            from Backend.Core.MainCore.CognitionCore.DeepThought import DeepThoughtEngine
+            _deep_thought_engine = DeepThoughtEngine()
+        except ImportError:
+            pass
+    return _deep_thought_engine
 
 
 COMMON_TYPOS = {
@@ -124,11 +138,11 @@ class CorpusSpellChecker:
 class CognitionCore(BaseService):
     """
     CognitionCore is the primary LLM reasoning interface.
-    Sends prompts to local in-process models (Sovereign GPT or direct model weights).
+    Sends prompts to Karsh — the custom transformer built from scratch.
     """
 
     def __init__(self) -> None:
-        self._model_id = "sovereign-gpt"
+        self._model_id = "karsh"
         self._temperature = 0.7
         self._max_tokens = 2048
         self._initialized = False
@@ -139,7 +153,7 @@ class CognitionCore(BaseService):
         
         # Initialize spell checker using the local corpus data
         root = Path(__file__).resolve().parent.parent.parent.parent.parent
-        corpus_path = root / "Data" / "training" / "sovereign_gpt" / "corpus.txt"
+        corpus_path = root / "Data" / "training" / "karsh" / "corpus.txt"
         self._spell_checker = CorpusSpellChecker(corpus_path)
 
     def info(self) -> PluginInfo:
@@ -163,7 +177,8 @@ class CognitionCore(BaseService):
                 context=kwargs.get("context"),
                 temperature=kwargs.get("temperature"),
                 max_tokens=kwargs.get("max_tokens"),
-                model_id=kwargs.get("model_id")
+                model_id=kwargs.get("model_id"),
+                mode=kwargs.get("mode", "standard"),
             )
         else:
             raise ValueError(f"Action '{action}' is not supported by Cognition.")
@@ -175,7 +190,7 @@ class CognitionCore(BaseService):
 
         config = ConfigLoader.load()
         model_cfg = config.get_section("models.reasoning")
-        self._model_id = model_cfg.get("name", "sovereign-gpt")
+        self._model_id = model_cfg.get("name", "karsh")
         
         # Keep loading of direct transformer completely lazy (no eager loading on startup)
         self._use_direct = False
@@ -194,7 +209,7 @@ class CognitionCore(BaseService):
         """
         raise NotImplementedError(
             "load_direct_model: Vibhu-Oska does not load external model weights. "
-            "All inference runs through Sovereign GPT (custom transformer) or BackupCore."
+            "All inference runs through Karsh (custom transformer) or BackupCore."
         )
 
     async def generate_direct(
@@ -211,7 +226,7 @@ class CognitionCore(BaseService):
         """
         raise NotImplementedError(
             "generate_direct: No external model loaded. "
-            "Use generate_sovereign() for Sovereign GPT inference."
+            "Use generate_karsh() for Karsh inference."
         )
 
 
@@ -281,7 +296,7 @@ class CognitionCore(BaseService):
             )
         )
 
-    async def generate_sovereign(
+    async def generate_karsh(
         self,
         prompt: str,
         system_prompt: str = "",
@@ -289,34 +304,32 @@ class CognitionCore(BaseService):
         temperature: float | None = None,
         max_tokens: int | None = None
     ) -> TaskResponse:
-        """Runs prompt inference using our custom Sovereign GPT from scratch."""
+        """Runs prompt inference using Karsh — our custom transformer built from scratch."""
         import time
         from pathlib import Path
 
         # Check if model has checkpoints
         root = Path(__file__).resolve().parent.parent.parent.parent.parent
-        checkpoints_dir = root / "Models" / "sovereign_gpt" / "checkpoints"
+        checkpoints_dir = root / "Models" / "karsh" / "checkpoints"
 
         vocab_path = checkpoints_dir / "tokenizer_vocab.json"
-        ckpt_path = checkpoints_dir / "sovereign_gpt.pt"
+        ckpt_path = checkpoints_dir / "karsh.pt"
 
         if not vocab_path.exists() or not ckpt_path.exists():
-            raise RuntimeError("Sovereign GPT checkpoints missing. Train the model first.")
+            raise RuntimeError("Karsh checkpoints missing. Train the model first.")
 
         # Checkpoint readiness gate: if < 1MB, model hasn't trained enough to be useful
         ckpt_size_mb = ckpt_path.stat().st_size / (1024 * 1024)
         if ckpt_size_mb < 1.0:
             raise RuntimeError(
-                f"Sovereign GPT checkpoint too small ({ckpt_size_mb:.2f}MB) — "
+                f"Karsh checkpoint too small ({ckpt_size_mb:.2f}MB) — "
                 "needs more training epochs. Using BackupCore."
             )
             
         try:
-            from Models.sovereign_gpt.generate import SovereignGPTGenerator
-            
-            if not hasattr(self, "_sovereign_generator") or self._sovereign_generator is None:
-                self._log.info("Loading Sovereign GPT generator from checkpoints...")
-                self._sovereign_generator = SovereignGPTGenerator(checkpoints_dir)
+            if not hasattr(self, "_karsh_generator") or self._karsh_generator is None:
+                self._log.info("Loading Karsh generator from checkpoints...")
+                self._karsh_generator = KarshGenerator(checkpoints_dir)
             
             start_time = time.time()
             
@@ -329,7 +342,7 @@ class CognitionCore(BaseService):
                 formatted_prompt = f"Query: {prompt}\nResponse:"
                 
             def _generate():
-                return self._sovereign_generator.generate(
+                return self._karsh_generator.generate(
                     prompt=formatted_prompt,
                     max_tokens=max_tokens if max_tokens is not None else 128,
                     temperature=temperature if temperature is not None else 0.7
@@ -339,7 +352,7 @@ class CognitionCore(BaseService):
             elapsed_ms = int((time.time() - start_time) * 1000)
 
             # Quality gate: validate output is coherent before accepting.
-            # The Sovereign GPT checkpoint is undertrained — output must pass
+            # The Karsh checkpoint is undertrained — output must pass
             # all checks or we fall back to BackupCore for a clean response.
             import re as _re
             clean = output.strip()
@@ -347,7 +360,7 @@ class CognitionCore(BaseService):
             # Must have real content length
             if len(clean) < 50:
                 raise RuntimeError(
-                    f"Sovereign GPT output too short (len={len(clean)}). "
+                    f"Karsh output too short (len={len(clean)}). "
                     "Checkpoint needs training. Falling back to BackupCore."
                 )
 
@@ -355,7 +368,7 @@ class CognitionCore(BaseService):
             real_words = _re.findall(r'\b[a-zA-Z]{4,}\b', clean)
             if len(real_words) < 8:
                 raise RuntimeError(
-                    f"Sovereign GPT output has too few real words ({len(real_words)}). "
+                    f"Karsh output has too few real words ({len(real_words)}). "
                     "Checkpoint needs training. Falling back to BackupCore."
                 )
 
@@ -364,12 +377,12 @@ class CognitionCore(BaseService):
             token_noise = _re.findall(r'\b[A-Z]\b', clean)  # Single capital letters
             if len(token_noise) > 3 or len(junk_pattern) > 2:
                 raise RuntimeError(
-                    f"Sovereign GPT output contains token noise (caps={len(token_noise)}). "
+                    f"Karsh output contains token noise (caps={len(token_noise)}). "
                     "Checkpoint needs training. Falling back to BackupCore."
                 )
             
-            prompt_tokens = len(self._sovereign_generator.tokenizer.encode(formatted_prompt))
-            completion_tokens = len(self._sovereign_generator.tokenizer.encode(output))
+            prompt_tokens = len(self._karsh_generator.tokenizer.encode(formatted_prompt))
+            completion_tokens = len(self._karsh_generator.tokenizer.encode(output))
             
             return TaskResponse(
                 content=output,
@@ -379,16 +392,62 @@ class CognitionCore(BaseService):
                     total_tokens=prompt_tokens + completion_tokens
                 ),
                 metadata=ResponseMetadata(
-                    status=Status(code=StatusCode.COMPLETED, message="Inference completed successfully via Sovereign GPT")
+                    status=Status(code=StatusCode.COMPLETED, message="Inference completed successfully via Karsh")
                 )
             )
             
         except Exception as e:
             self._log.warning(
-                "Sovereign GPT inference failed — re-raising for HybridCore fallback",
+                "Karsh inference failed — re-raising for OrchestratorCore fallback",
                 error=str(e)
             )
-            raise  # Let HybridCore catch this and route to BackupCore
+            raise  # Let OrchestratorCore catch this and route to BackupCore
+
+    async def generate_karsh_stream(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        context: list[dict[str, Any]] | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+    ):
+        """Streaming Karsh generation — yields (token_id, accumulated_text) tuples."""
+        import time
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent.parent.parent.parent
+        checkpoints_dir = root / "Models" / "karsh" / "checkpoints"
+
+        if not (checkpoints_dir / "karsh.pt").exists():
+            raise RuntimeError("Karsh checkpoints missing.")
+
+        ckpt_size_mb = (checkpoints_dir / "karsh.pt").stat().st_size / (1024 * 1024)
+        if ckpt_size_mb < 1.0:
+            raise RuntimeError("Karsh checkpoint too small.")
+
+        if not hasattr(self, "_karsh_generator") or self._karsh_generator is None:
+            self._karsh_generator = KarshGenerator(checkpoints_dir)
+
+        if context:
+            formatted_prompt = "Context:\n"
+            for item in context:
+                formatted_prompt += f"- {item.get('content', '')}\n"
+            formatted_prompt += f"\nQuery: {prompt}\nResponse:"
+        else:
+            formatted_prompt = f"Query: {prompt}\nResponse:"
+
+        gen_kwargs = dict(
+            prompt=formatted_prompt,
+            max_tokens=max_tokens if max_tokens is not None else 128,
+            temperature=temperature if temperature is not None else 0.7,
+        )
+
+        def _stream():
+            return list(self._karsh_generator.generate_stream(**gen_kwargs))
+
+        tokens = await asyncio.to_thread(_stream)
+        for token_id, accumulated in tokens:
+            yield token_id, accumulated
 
     async def generate(
         self,
@@ -397,15 +456,27 @@ class CognitionCore(BaseService):
         context: list[dict[str, Any]] | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
-        model_id: str | None = None
+        model_id: str | None = None,
+        mode: str = "standard",
     ) -> TaskResponse:
         """
-        Executes an inference request. Prefers in-process direct local model
-        loaded in Python memory for full offline autonomous capabilities.
-        Allows targeting 'sovereign-gpt' explicitly if selected.
+        Executes an inference request using Karsh — the custom transformer built from scratch.
+
+        Parameters:
+            prompt: User input
+            system_prompt: System context
+            context: Retrieved context items
+            temperature: Sampling temperature
+            max_tokens: Max generation tokens
+            model_id: Target model (only "karsh" supported)
+            mode: "standard" for normal inference, "deep_thought" for multi-path reflection
         """
         if not self._initialized:
             await self.initialize()
+
+        # DeepThought mode — multi-path reflection for complex queries
+        if mode == "deep_thought":
+            return await self.deep_thought_generate(prompt, system_prompt, context, temperature, max_tokens)
 
         # Dynamic spelling correction check based on the corpus
         typo_info = self._spell_checker.find_typo(prompt)
@@ -422,11 +493,74 @@ class CognitionCore(BaseService):
             else:
                 active_system_prompt = "You are Vibhu-Oska AI-OS. Respond concisely and professionally. Do NOT output any \"Aha...\" typo correction prefix."
 
-        # Route request: only Sovereign GPT is supported — no external models
-        if model_id in ("sovereign-gpt", "vibhu-core", "direct-transformers", "", None):
-            return await self.generate_sovereign(prompt, active_system_prompt, context, temperature, max_tokens)
+        # Route request: only Karsh is supported — no external models
+        if model_id in ("karsh", "", None):
+            return await self.generate_karsh(prompt, active_system_prompt, context, temperature, max_tokens)
 
-        raise ValueError(f"Unknown model_id: {model_id!r}. Sovereign GPT is the only supported engine.")
+        raise ValueError(f"Unknown model_id: {model_id!r}. Karsh is the only supported engine.")
+
+    async def deep_thought_generate(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        context: list[dict[str, Any]] | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+    ) -> TaskResponse:
+        """
+        DeepThought mode — multi-path reflection for complex reasoning.
+
+        Uses DeepThoughtEngine to explore multiple reasoning paths,
+        score them, and select the best response.
+
+        Parameters:
+            prompt: Complex user query
+            system_prompt: System context
+            context: Retrieved context items
+            temperature: Sampling temperature
+            max_tokens: Max tokens per generation
+        Returns: TaskResponse from best reasoning path
+        """
+        engine = _get_deep_thought()
+        if engine is None:
+            self._log.warning("DeepThought unavailable, falling back to standard generation")
+            return await self.generate_karsh(prompt, system_prompt, context, temperature, max_tokens)
+
+        self._log.info("DeepThought mode activated", prompt=prompt[:60])
+
+        async def generate_fn(prompt: str, max_tokens: int = 512) -> str:
+            """Internal generate function for DeepThought to call."""
+            resp = await self.generate_karsh(prompt, system_prompt, context, temperature, max_tokens)
+            return resp.content
+
+        try:
+            result = await engine.reflect(
+                prompt=prompt,
+                context=context or [],
+                generate_fn=generate_fn,
+                max_tokens=max_tokens or 512,
+            )
+
+            prompt_tokens = len(prompt.split())
+            completion_tokens = len(result.split())
+
+            return TaskResponse(
+                content=result,
+                token_usage=TokenUsage(
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    total_tokens=prompt_tokens + completion_tokens,
+                ),
+                metadata=ResponseMetadata(
+                    status=Status(
+                        code=StatusCode.COMPLETED,
+                        message="DeepThought inference completed",
+                    )
+                ),
+            )
+        except Exception as e:
+            self._log.warning("DeepThought failed, falling back to standard", error=str(e))
+            return await self.generate_karsh(prompt, system_prompt, context, temperature, max_tokens)
 
     def process(self, data: Any) -> Any:
         """Backward compatibility pass-through."""
