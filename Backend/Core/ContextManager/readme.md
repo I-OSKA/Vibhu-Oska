@@ -32,4 +32,4 @@ context_manager:
 
 ## Why This Matters
 
-Sovereign GPT (default config) has `max_seq_len = 256`. Without context pruning, a long conversation history would silently overflow the model's input capacity, producing garbage output. ContextManager prevents this at the system level.
+Karsh (default config) has `max_seq_len = 512`. Without context pruning, a long conversation history would silently overflow the model's input capacity, producing garbage output. ContextManager prevents this at the system level.

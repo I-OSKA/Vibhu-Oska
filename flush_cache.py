@@ -1,6 +1,6 @@
 """
 Flush all response_cache:* keys from the CacheManager.
-Run this once to clear stale Sovereign GPT junk from the cache.
+Run this once to clear stale Karsh junk from the cache.
 """
 import asyncio, sys
 sys.path.insert(0, r'c:\Users\USER\Desktop\Extras\.i-oska\Vibhu-Oska')

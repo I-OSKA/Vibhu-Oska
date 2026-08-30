@@ -4,7 +4,7 @@ The CPU-based rules fallback. BackupCore activates when every GPU inference path
 
 ## Responsibility
 
-Serve a response when Sovereign GPT and Qwen both fail. The response may be limited in quality, but the pipeline never crashes.
+Serve a response when Karsh fails. The response may be limited in quality, but the pipeline never crashes.
 
 ## Design Principles
 

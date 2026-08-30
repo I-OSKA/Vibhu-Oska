@@ -92,11 +92,11 @@ fi
 info "Creating runtime directories..."
 mkdir -p \
     "$PROJECT_ROOT/Data/chromadb" \
-    "$PROJECT_ROOT/Data/training/sovereign_gpt" \
+    "$PROJECT_ROOT/Data/training/karsh" \
     "$PROJECT_ROOT/Data/training/router_dataset" \
     "$PROJECT_ROOT/Data/training/reasoning_dataset" \
     "$PROJECT_ROOT/Data/training/feedback" \
-    "$PROJECT_ROOT/Models/sovereign_gpt/checkpoints" \
+    "$PROJECT_ROOT/Models/karsh/checkpoints" \
     "$PROJECT_ROOT/Models/router/checkpoints" \
     "$PROJECT_ROOT/Log"
 success "Directories created"

@@ -13,6 +13,7 @@ import {
   Database
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
+import { API } from '../../lib/api';
 
 export default function ResearchPage() {
   const [query, setQuery] = useState('');
@@ -37,7 +38,7 @@ export default function ResearchPage() {
       setTimeout(() => setSearchState('Querying local SearXNG Docker container...'), 500);
       setTimeout(() => setSearchState(deepSearch ? 'Concurrent scraper fetching URLs...' : 'Extracting snippets & scoring matching indices...'), 1200);
 
-      const resp = await fetch('http://127.0.0.1:8000/api/v1/search', {
+      const resp = await fetch(API.buildUrl(API.endpoints.search), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -14,6 +14,7 @@ build/
 
 # ── Virtual Environment ──
 .venv/
+.venv_cuda/
 venv/
 ENV/
 
@@ -38,7 +39,7 @@ Data/weights/
 Data/vibhu_oska.db
 Models/router/checkpoints/
 Models/reasoning/adapters/
-Models/sovereign_gpt/checkpoints/
+Models/karsh/checkpoints/
 
 # ── Logs ──
 Log/*.log
@@ -63,5 +64,4 @@ htmlcov/
 # ── Misc ──
 *.bak
 *.tmp
-
-recovered_chat_history.md
+.agents

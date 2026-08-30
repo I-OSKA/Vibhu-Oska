@@ -129,6 +129,12 @@ class AutomationCore(BaseService):
             "watch_process":        self._watch_process,
             "kill_process":         self._kill_process,
             "open_application":     self._open_application,
+            "close_application":    self._close_application,
+            "switch_to_application":self._switch_to_application,
+            "list_open_apps":       self._list_open_apps,
+            "take_screenshot":      self._take_screenshot,
+            "type_text":            self._type_text,
+            "press_key":            self._press_key,
             "get_environment_vars": self._get_environment_vars,
         }
 
@@ -575,21 +581,119 @@ class AutomationCore(BaseService):
 
     async def _open_application(self, application: str, **_: Any) -> dict[str, Any]:
         """
-        Launch an OS application or open a URL/file.
+        Launch an OS application using the AppController fuzzy-name resolver.
 
         Parameters:
-            application: Application name, file path, or URL to open
+            application: App name (e.g. 'chrome', 'notepad', 'spotify') or full path
         Returns: dict with status, application, message
-        Edge cases: Uses platform-native launcher (os.startfile on Windows, xdg-open on Linux)
+        Edge cases: Falls back to os.startfile if no fuzzy match found; errors are caught and returned
         """
         try:
             self._log.info("Opening application", application=application)
-            await asyncio.to_thread(self._platform_open, application)
-            return {"status": "success", "application": application, "message": f"Launched: {application}"}
-
+            result = await asyncio.to_thread(AppController.open_app, application)
+            return result
         except Exception as e:
             self._log.error("Application launch failed", application=application, error=str(e))
             return {"status": "error", "error": str(e), "application": application}
+
+    async def _close_application(self, application: str, **_: Any) -> dict[str, Any]:
+        """
+        Close a running application by its name using psutil.
+
+        Parameters:
+            application: Process name to close (fuzzy-matched, case-insensitive)
+        Returns: dict with status, killed_count, processes list
+        Edge cases: No match returns graceful not-found; partial matches are all terminated
+        """
+        try:
+            result = await asyncio.to_thread(AppController.close_app, application)
+            return result
+        except Exception as e:
+            return {"status": "error", "error": str(e), "application": application}
+
+    async def _switch_to_application(self, application: str, **_: Any) -> dict[str, Any]:
+        """
+        Bring a running application's window to the foreground.
+
+        Parameters:
+            application: Window title substring to match (case-insensitive)
+        Returns: dict with status, window_title, message
+        Edge cases: No window found returns not-found; multiple matches activate first
+        """
+        try:
+            result = await asyncio.to_thread(AppController.switch_to_app, application)
+            return result
+        except Exception as e:
+            return {"status": "error", "error": str(e), "application": application}
+
+    async def _list_open_apps(self, **_: Any) -> dict[str, Any]:
+        """
+        List all currently running applications with visible windows.
+
+        Parameters: none
+        Returns: dict with status, apps (list of {title, pid})
+        Edge cases: Returns empty list if pygetwindow unavailable
+        """
+        try:
+            result = await asyncio.to_thread(AppController.list_open_apps)
+            return result
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+    async def _take_screenshot(self, **_: Any) -> dict[str, Any]:
+        """
+        Capture the current screen and return it as a base64-encoded PNG.
+
+        Parameters: none
+        Returns: dict with status, image_b64, width, height, saved_path
+        Edge cases: Requires Pillow; falls back gracefully if unavailable
+        """
+        try:
+            result = await asyncio.to_thread(AppController.screenshot)
+            return result
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+    async def _type_text(self, text: str, interval: float = 0.03, **_: Any) -> dict[str, Any]:
+        """
+        Type a string of text into the currently focused window using keyboard injection.
+
+        Parameters:
+            text: String to type
+            interval: Delay between keystrokes in seconds (default 0.03)
+        Returns: dict with status, chars_typed
+        Edge cases: Requires pyautogui; types at active focus — no target guarantee
+        """
+        try:
+            import pyautogui
+            await asyncio.to_thread(pyautogui.write, text, interval=interval)
+            return {"status": "success", "chars_typed": len(text)}
+        except ImportError:
+            return {"status": "error", "error": "pyautogui not installed"}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+    async def _press_key(self, key: str, **_: Any) -> dict[str, Any]:
+        """
+        Press a keyboard key or hotkey combination.
+
+        Parameters:
+            key: Key name or hotkey (e.g. 'enter', 'ctrl+c', 'win+d', 'alt+tab')
+        Returns: dict with status, key
+        Edge cases: Invalid key names are caught and returned as errors
+        """
+        try:
+            import pyautogui
+            keys = [k.strip() for k in key.split("+")]
+            if len(keys) == 1:
+                await asyncio.to_thread(pyautogui.press, keys[0])
+            else:
+                await asyncio.to_thread(pyautogui.hotkey, *keys)
+            return {"status": "success", "key": key}
+        except ImportError:
+            return {"status": "error", "error": "pyautogui not installed"}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
 
     def _platform_open(self, target: str) -> None:
         """Open a file/URL/application using the platform-appropriate method."""
@@ -623,3 +727,231 @@ class AutomationCore(BaseService):
                 result[key] = os.environ.get(key)
 
         return {"status": "success", "vars": result}
+
+
+# ==================================================================================================
+# # Internal Separation Division
+# =================────────────────────────────────────────────────────────────────────────────────
+
+
+# ── App name → executable mapping for Windows ─────────────────────────────────────────────────
+_APP_MAP: dict[str, str] = {
+    # Browsers
+    "chrome":         r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "google chrome":  r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "firefox":        r"C:\Program Files\Mozilla Firefox\firefox.exe",
+    "edge":           r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    "brave":          r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+    # Editors / IDE
+    "vscode":         r"C:\Users\USER\AppData\Local\Programs\Microsoft VS Code\Code.exe",
+    "code":           r"C:\Users\USER\AppData\Local\Programs\Microsoft VS Code\Code.exe",
+    "visual studio code": r"C:\Users\USER\AppData\Local\Programs\Microsoft VS Code\Code.exe",
+    "notepad":        r"C:\Windows\System32\notepad.exe",
+    "notepad++":      r"C:\Program Files\Notepad++\notepad++.exe",
+    "sublime":        r"C:\Program Files\Sublime Text\sublime_text.exe",
+    # Terminals
+    "powershell":     r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+    "cmd":            r"C:\Windows\System32\cmd.exe",
+    "terminal":       r"C:\Users\USER\AppData\Local\Microsoft\WindowsApps\wt.exe",
+    "windows terminal": r"C:\Users\USER\AppData\Local\Microsoft\WindowsApps\wt.exe",
+    # Media
+    "spotify":        r"C:\Users\USER\AppData\Roaming\Spotify\Spotify.exe",
+    "vlc":            r"C:\Program Files\VideoLAN\VLC\vlc.exe",
+    # Productivity
+    "explorer":       r"C:\Windows\explorer.exe",
+    "file explorer":  r"C:\Windows\explorer.exe",
+    "task manager":   r"C:\Windows\System32\Taskmgr.exe",
+    "calculator":     r"C:\Windows\System32\calc.exe",
+    "paint":          r"C:\Windows\System32\mspaint.exe",
+    "word":           r"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE",
+    "excel":          r"C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE",
+    "discord":        r"C:\Users\USER\AppData\Local\Discord\Update.exe",
+    "slack":          r"C:\Users\USER\AppData\Local\slack\slack.exe",
+    "zoom":           r"C:\Users\USER\AppData\Roaming\Zoom\bin\Zoom.exe",
+    "obs":            r"C:\Program Files\obs-studio\bin\64bit\obs64.exe",
+    "steam":          r"C:\Program Files (x86)\Steam\steam.exe",
+    "postman":        r"C:\Users\USER\AppData\Local\Postman\Postman.exe",
+    "docker":         r"C:\Program Files\Docker\Docker\Docker Desktop.exe",
+}
+
+
+class AppController:
+    """
+    AppController — OS-level application management for Vibhu-Oska AI-OS.
+
+    Provides fuzzy name resolution and execution of open/close/switch/screenshot/type/key
+    operations entirely on local hardware via pygetwindow, pyautogui, psutil, and Pillow.
+
+    All methods are classmethods — no instantiation required.
+    """
+
+    @classmethod
+    def open_app(cls, name: str) -> dict[str, Any]:
+        """
+        Launch an application by fuzzy name or full path.
+
+        Parameters:
+            name: App name (e.g. 'chrome', 'spotify') or absolute path
+        Returns: dict with status, application, message
+        Edge cases: Falls back to os.startfile for unknown names; raises on path errors
+        """
+        norm = name.lower().strip()
+
+        # Direct path
+        if os.path.isabs(name) and os.path.exists(name):
+            subprocess.Popen([name])
+            return {"status": "success", "application": name, "message": f"Launched: {name}"}
+
+        # Known app map
+        exe_path = _APP_MAP.get(norm)
+        if exe_path and os.path.exists(exe_path):
+            subprocess.Popen([exe_path])
+            return {"status": "success", "application": norm, "message": f"Launched {norm} via known path."}
+
+        # Fuzzy: check shutil.which (covers PATH apps like python, git, npm)
+        found = shutil.which(norm) or shutil.which(name)
+        if found:
+            subprocess.Popen([found])
+            return {"status": "success", "application": name, "message": f"Launched via PATH: {found}"}
+
+        # Last resort: os.startfile (works for registered file types & UWP apps on Windows)
+        try:
+            os.startfile(name)
+            return {"status": "success", "application": name, "message": f"Launched via startfile: {name}"}
+        except Exception as e:
+            return {
+                "status": "not_found",
+                "application": name,
+                "message": f"Could not find or launch '{name}'. Ensure it is installed.",
+                "detail": str(e),
+            }
+
+    @classmethod
+    def close_app(cls, name: str) -> dict[str, Any]:
+        """
+        Terminate all processes whose name fuzzy-matches the given string.
+
+        Parameters:
+            name: App/process name substring (case-insensitive)
+        Returns: dict with status, killed_count, processes
+        Edge cases: No match returns not_found; partial matches are all killed
+        """
+        try:
+            import psutil
+            norm = name.lower()
+            killed = []
+            for proc in psutil.process_iter(["pid", "name"]):
+                try:
+                    pname = (proc.info["name"] or "").lower()
+                    if norm in pname or pname in norm:
+                        proc.terminate()
+                        killed.append({"pid": proc.info["pid"], "name": proc.info["name"]})
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+
+            if not killed:
+                return {"status": "not_found", "application": name, "message": f"No running process matched '{name}'."}
+
+            return {"status": "success", "killed_count": len(killed), "processes": killed}
+        except ImportError:
+            return {"status": "error", "error": "psutil not installed"}
+
+    @classmethod
+    def switch_to_app(cls, name: str) -> dict[str, Any]:
+        """
+        Bring a window with a matching title to the foreground.
+
+        Parameters:
+            name: Window title substring (case-insensitive)
+        Returns: dict with status, window_title, message
+        Edge cases: No window found returns not_found; first match is activated
+        """
+        try:
+            import pygetwindow as gw
+            norm = name.lower()
+            windows = gw.getAllWindows()
+            for win in windows:
+                if norm in (win.title or "").lower():
+                    win.activate()
+                    return {"status": "success", "window_title": win.title, "message": f"Switched to: {win.title}"}
+            return {"status": "not_found", "application": name, "message": f"No window found matching '{name}'."}
+        except ImportError:
+            return {"status": "error", "error": "pygetwindow not installed"}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+    @classmethod
+    def list_open_apps(cls) -> dict[str, Any]:
+        """
+        Return all visible windows with non-empty titles.
+
+        Parameters: none
+        Returns: dict with status, count, apps (list of {title, pid})
+        Edge cases: Returns empty list if pygetwindow unavailable; ignores blank-title windows
+        """
+        try:
+            import pygetwindow as gw
+            import psutil
+            windows = gw.getAllWindows()
+            apps = []
+            for win in windows:
+                if win.title and win.title.strip():
+                    entry: dict[str, Any] = {"title": win.title}
+                    # Try to attach PID
+                    try:
+                        norm = win.title.lower()
+                        for proc in psutil.process_iter(["pid", "name"]):
+                            if (proc.info["name"] or "").lower() in norm or norm in (proc.info["name"] or "").lower():
+                                entry["pid"] = proc.info["pid"]
+                                break
+                    except Exception:
+                        pass
+                    apps.append(entry)
+            return {"status": "success", "count": len(apps), "apps": apps}
+        except ImportError:
+            return {"status": "error", "error": "pygetwindow not installed"}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+    @classmethod
+    def screenshot(cls) -> dict[str, Any]:
+        """
+        Capture the full screen and return as a base64-encoded PNG string.
+
+        Parameters: none
+        Returns: dict with status, image_b64, width, height, saved_path
+        Edge cases: Requires Pillow (PIL); saves to Log/screenshots/ automatically
+        """
+        try:
+            from PIL import ImageGrab
+            import base64
+            import io
+            from pathlib import Path
+
+            img = ImageGrab.grab()
+            w, h = img.size
+
+            # Save to log dir
+            save_dir = Path(__file__).resolve().parent.parent.parent.parent.parent / "Log" / "screenshots"
+            save_dir.mkdir(parents=True, exist_ok=True)
+            import time as _time
+            fname = save_dir / f"screenshot_{int(_time.time())}.png"
+            img.save(fname, "PNG")
+
+            # Also encode to b64 for WebSocket return
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+            return {
+                "status": "success",
+                "width": w,
+                "height": h,
+                "saved_path": str(fname),
+                "image_b64": b64,
+                "message": f"Screenshot saved: {fname.name}",
+            }
+        except ImportError:
+            return {"status": "error", "error": "Pillow not installed (pip install Pillow)"}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}

@@ -50,7 +50,7 @@ its threat model helps assess the risk surface:
 - Vulnerabilities that require physical access to the host machine.
 - Issues in third-party dependencies (report those upstream to the relevant maintainer).
 - Denial-of-service attacks against a locally-running single-user instance.
-- Security issues in the private Sovereign GPT weights or biometric calibration data
+- Security issues in the private SARA weights or biometric calibration data
   (these are not distributed in this repository).
 
 ---

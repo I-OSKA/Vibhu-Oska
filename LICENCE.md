@@ -24,7 +24,7 @@ SOFTWARE.
 
 ## Additional Terms
 
-### Sovereign Core Restriction
+### Karsh Core Restriction
 
 The private Vibhu-Oska core (model weights, fine-tuned parameters, biometric modules,
 and internal training data) is **not** covered by this license. Those assets are

@@ -28,7 +28,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
-from Models.sovereign_gpt.tokenizer import SovereignBPETokenizer
+from Models.karsh.tokenizer import KarshBPETokenizer
 
 # ══════════════════════════════════════════════════════════════════
 # Tokenizer Helper
@@ -51,7 +51,7 @@ def pad_sequence(ids: list[int], max_len: int, pad_id: int) -> tuple[list[int], 
 # ══════════════════════════════════════════════════════════════════
 
 class RouterDataset(Dataset):
-    def __init__(self, jsonl_path: Path, tokenizer: SovereignBPETokenizer, max_len: int = 128) -> None:
+    def __init__(self, jsonl_path: Path, tokenizer: KarshBPETokenizer, max_len: int = 128) -> None:
         self.samples   = []
         self.tokenizer = tokenizer
         self.max_len   = max_len
@@ -116,10 +116,10 @@ def train(
     vocab_path = output_dir / "router_vocab.json"
     if vocab_path.exists():
         log.info(f"Loading existing BPE tokenizer from {vocab_path}")
-        tokenizer = SovereignBPETokenizer.load(vocab_path)
+        tokenizer = KarshBPETokenizer.load(vocab_path)
     else:
         log.info("Training BPE tokenizer from training dataset...")
-        tokenizer = SovereignBPETokenizer()
+        tokenizer = KarshBPETokenizer()
         prompts = []
         with open(data_dir / "train.jsonl", "r", encoding="utf-8") as f:
             for line in f:

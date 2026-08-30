@@ -1,0 +1,83 @@
+2026-08-09 16:49:49,654 | INFO | Set PyTorch CPU threads to 12
+2026-08-09 16:49:49,655 | INFO | Existing training corpus detected (125132 bytes) — preserving it, skipping default seed.
+2026-08-09 16:49:49,662 | INFO | Training BPE tokenizer (target vocab size = 4000)...
+2026-08-09 16:50:10,000 | INFO | Tokenizer saved -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\tokenizer_vocab.json
+2026-08-09 16:50:10,001 | INFO | Parsed 684 independent Q&A sequences from corpus.
+2026-08-09 16:50:26,784 | INFO | Running training on device: cpu
+2026-08-09 16:50:26,966 | INFO | Model initialized: 7,318,784 trainable parameters | dtype=torch.float32
+2026-08-09 16:51:49,971 | INFO | Epoch 1/40 | Loss: 7.5030 | Accuracy: 12.29% | Perplexity: 1813.54 | Time: 80.95s
+2026-08-09 16:51:50,027 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=7.5030)
+2026-08-09 16:53:11,448 | INFO | Epoch 2/40 | Loss: 6.0104 | Accuracy: 25.09% | Perplexity: 407.64 | Time: 81.42s
+2026-08-09 16:53:11,493 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=6.0104)
+2026-08-09 16:54:35,788 | INFO | Epoch 3/40 | Loss: 4.5599 | Accuracy: 37.58% | Perplexity: 95.58 | Time: 84.29s
+2026-08-09 16:54:35,833 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=4.5599)
+2026-08-09 16:55:58,725 | INFO | Epoch 4/40 | Loss: 3.7240 | Accuracy: 44.81% | Perplexity: 41.43 | Time: 82.89s
+2026-08-09 16:55:58,774 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=3.7240)
+2026-08-09 16:57:26,199 | INFO | Epoch 5/40 | Loss: 2.9623 | Accuracy: 56.12% | Perplexity: 19.34 | Time: 87.42s
+2026-08-09 16:57:26,238 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=2.9623)
+2026-08-09 16:58:55,981 | INFO | Epoch 6/40 | Loss: 2.2433 | Accuracy: 70.44% | Perplexity: 9.42 | Time: 89.74s
+2026-08-09 16:58:56,027 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=2.2433)
+2026-08-09 17:00:20,520 | INFO | Epoch 7/40 | Loss: 1.6154 | Accuracy: 78.84% | Perplexity: 5.03 | Time: 84.49s
+2026-08-09 17:00:20,660 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=1.6154)
+2026-08-09 17:01:45,719 | INFO | Epoch 8/40 | Loss: 1.1208 | Accuracy: 84.42% | Perplexity: 3.07 | Time: 85.06s
+2026-08-09 17:01:45,764 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=1.1208)
+2026-08-09 17:03:15,104 | INFO | Epoch 9/40 | Loss: 0.8328 | Accuracy: 87.86% | Perplexity: 2.30 | Time: 89.34s
+2026-08-09 17:03:15,149 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.8328)
+2026-08-09 17:04:39,495 | INFO | Epoch 10/40 | Loss: 0.6238 | Accuracy: 90.13% | Perplexity: 1.87 | Time: 84.35s
+2026-08-09 17:04:39,546 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.6238)
+2026-08-09 17:06:03,256 | INFO | Epoch 11/40 | Loss: 0.5042 | Accuracy: 91.57% | Perplexity: 1.66 | Time: 83.71s
+2026-08-09 17:06:03,302 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.5042)
+2026-08-09 17:07:27,721 | INFO | Epoch 12/40 | Loss: 0.4182 | Accuracy: 92.79% | Perplexity: 1.52 | Time: 84.42s
+2026-08-09 17:07:27,766 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.4182)
+2026-08-09 17:08:55,563 | INFO | Epoch 13/40 | Loss: 0.3501 | Accuracy: 93.79% | Perplexity: 1.42 | Time: 87.80s
+2026-08-09 17:08:55,606 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.3501)
+2026-08-09 17:10:14,260 | INFO | Epoch 14/40 | Loss: 0.3024 | Accuracy: 94.21% | Perplexity: 1.35 | Time: 78.65s
+2026-08-09 17:10:14,304 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.3024)
+2026-08-09 17:11:32,128 | INFO | Epoch 15/40 | Loss: 0.2713 | Accuracy: 94.72% | Perplexity: 1.31 | Time: 77.82s
+2026-08-09 17:11:32,173 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.2713)
+2026-08-09 17:12:52,878 | INFO | Epoch 16/40 | Loss: 0.2517 | Accuracy: 95.15% | Perplexity: 1.29 | Time: 80.70s
+2026-08-09 17:12:52,921 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.2517)
+2026-08-09 17:14:14,901 | INFO | Epoch 17/40 | Loss: 0.2270 | Accuracy: 95.45% | Perplexity: 1.25 | Time: 81.98s
+2026-08-09 17:14:14,945 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.2270)
+2026-08-09 17:15:37,915 | INFO | Epoch 18/40 | Loss: 0.2139 | Accuracy: 95.83% | Perplexity: 1.24 | Time: 82.97s
+2026-08-09 17:15:37,964 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.2139)
+2026-08-09 17:16:58,812 | INFO | Epoch 19/40 | Loss: 0.1954 | Accuracy: 96.10% | Perplexity: 1.22 | Time: 80.85s
+2026-08-09 17:16:58,867 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1954)
+2026-08-09 17:18:18,651 | INFO | Epoch 20/40 | Loss: 0.1893 | Accuracy: 96.20% | Perplexity: 1.21 | Time: 79.78s
+2026-08-09 17:18:18,695 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1893)
+2026-08-09 17:19:39,809 | INFO | Epoch 21/40 | Loss: 0.1800 | Accuracy: 96.23% | Perplexity: 1.20 | Time: 81.11s
+2026-08-09 17:19:39,853 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1800)
+2026-08-09 17:21:06,951 | INFO | Epoch 22/40 | Loss: 0.1702 | Accuracy: 96.48% | Perplexity: 1.19 | Time: 87.10s
+2026-08-09 17:21:06,996 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1702)
+2026-08-09 17:22:38,275 | INFO | Epoch 23/40 | Loss: 0.1661 | Accuracy: 96.56% | Perplexity: 1.18 | Time: 91.28s
+2026-08-09 17:22:38,328 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1661)
+2026-08-09 17:24:13,593 | INFO | Epoch 24/40 | Loss: 0.1630 | Accuracy: 96.59% | Perplexity: 1.18 | Time: 95.26s
+2026-08-09 17:24:13,643 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1630)
+2026-08-09 17:25:47,712 | INFO | Epoch 25/40 | Loss: 0.1557 | Accuracy: 96.72% | Perplexity: 1.17 | Time: 94.07s
+2026-08-09 17:25:47,757 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1557)
+2026-08-09 17:27:08,594 | INFO | Epoch 26/40 | Loss: 0.1523 | Accuracy: 96.75% | Perplexity: 1.16 | Time: 80.84s
+2026-08-09 17:27:08,647 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1523)
+2026-08-09 17:28:30,522 | INFO | Epoch 27/40 | Loss: 0.1511 | Accuracy: 96.80% | Perplexity: 1.16 | Time: 81.87s
+2026-08-09 17:28:30,563 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1511)
+2026-08-09 17:29:51,225 | INFO | Epoch 28/40 | Loss: 0.1490 | Accuracy: 96.91% | Perplexity: 1.16 | Time: 80.66s
+2026-08-09 17:29:51,272 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1490)
+2026-08-09 17:31:12,160 | INFO | Epoch 29/40 | Loss: 0.1460 | Accuracy: 96.91% | Perplexity: 1.16 | Time: 80.89s
+2026-08-09 17:31:12,208 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1460)
+2026-08-09 17:32:31,986 | INFO | Epoch 30/40 | Loss: 0.1463 | Accuracy: 96.99% | Perplexity: 1.16 | Time: 79.78s
+2026-08-09 17:33:57,102 | INFO | Epoch 31/40 | Loss: 0.1430 | Accuracy: 96.99% | Perplexity: 1.15 | Time: 85.11s
+2026-08-09 17:33:57,162 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1430)
+2026-08-09 17:35:27,673 | INFO | Epoch 32/40 | Loss: 0.1446 | Accuracy: 96.98% | Perplexity: 1.16 | Time: 90.51s
+2026-08-09 17:36:52,747 | INFO | Epoch 33/40 | Loss: 0.1396 | Accuracy: 97.02% | Perplexity: 1.15 | Time: 85.07s
+2026-08-09 17:36:52,786 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1396)
+2026-08-09 17:38:21,505 | INFO | Epoch 34/40 | Loss: 0.1395 | Accuracy: 97.09% | Perplexity: 1.15 | Time: 88.72s
+2026-08-09 17:38:21,550 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1395)
+2026-08-09 17:40:01,940 | INFO | Epoch 35/40 | Loss: 0.1396 | Accuracy: 97.09% | Perplexity: 1.15 | Time: 100.39s
+2026-08-09 17:41:34,129 | INFO | Epoch 36/40 | Loss: 0.1389 | Accuracy: 97.11% | Perplexity: 1.15 | Time: 92.19s
+2026-08-09 17:41:34,189 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1389)
+2026-08-09 17:43:05,703 | INFO | Epoch 37/40 | Loss: 0.1398 | Accuracy: 97.12% | Perplexity: 1.15 | Time: 91.51s
+2026-08-09 17:44:39,668 | INFO | Epoch 38/40 | Loss: 0.1380 | Accuracy: 97.12% | Perplexity: 1.15 | Time: 93.97s
+2026-08-09 17:44:39,744 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1380)
+2026-08-09 17:46:10,032 | INFO | Epoch 39/40 | Loss: 0.1399 | Accuracy: 97.12% | Perplexity: 1.15 | Time: 90.29s
+2026-08-09 17:47:43,899 | INFO | Epoch 40/40 | Loss: 0.1365 | Accuracy: 97.14% | Perplexity: 1.15 | Time: 93.87s
+2026-08-09 17:47:43,950 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=0.1365)
+2026-08-09 17:47:43,950 | INFO | Sovereign GPT training complete.

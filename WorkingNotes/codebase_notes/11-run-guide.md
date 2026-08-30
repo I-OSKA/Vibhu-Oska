@@ -94,8 +94,8 @@ notepad .env
 ## Step 6: Verify Models Are Ready
 
 ```powershell
-# Check Sovereign GPT checkpoint
-python -c "from pathlib import Path; p = Path('Models/sovereign_gpt/checkpoints/sovereign_gpt.pt'); print('GPT OK' if p.exists() else 'MISSING - train first')"
+# Check SARA checkpoint
+python -c "from pathlib import Path; p = Path('Models/sara/checkpoints/sara.pt'); print('GPT OK' if p.exists() else 'MISSING - train first')"
 
 # Check Router checkpoint
 python -c "from pathlib import Path; p = Path('Models/router/checkpoints/best_router.pt'); print('Router OK' if p.exists() else 'MISSING - train first')"
@@ -103,8 +103,8 @@ python -c "from pathlib import Path; p = Path('Models/router/checkpoints/best_ro
 
 If missing, train them:
 ```powershell
-# Train Sovereign GPT (~5-30 min depending on epochs)
-python -m Models.sovereign_gpt.train
+# Train SARA (~5-30 min depending on epochs)
+python -m Models.sara.train
 
 # Train Router (~2-10 min)
 python -m Models.router.train
@@ -141,7 +141,7 @@ python -m Backend.EntryPoint
 [INFO] ==========================================
 [INFO]   Vibhu-Oska AI-OS
 [INFO]   Version: 0.2.0
-[INFO]   Codename: sovereign
+[INFO]   Codename: sara
 [INFO]   Environment: development
 [INFO]   Tier: private
 [INFO] ==========================================

@@ -1,0 +1,17 @@
+2026-08-09 18:42:44,016 | INFO | Set PyTorch CPU threads to 12
+2026-08-09 18:42:44,019 | INFO | Existing training corpus detected (125132 bytes) — preserving it, skipping default seed.
+2026-08-09 18:42:44,023 | INFO | Training BPE tokenizer (target vocab size = 8000)...
+2026-08-09 18:43:14,632 | INFO | Tokenizer saved -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\tokenizer_vocab.json
+2026-08-09 18:43:14,635 | INFO | Parsed 684 independent Q&A sequences from corpus.
+2026-08-09 18:43:45,760 | INFO | Running training on device: cpu
+2026-08-09 18:43:47,114 | INFO | Model initialized: 54,183,936 trainable parameters | dtype=torch.float32
+2026-08-09 19:10:11,177 | INFO | Epoch 1/60 | Loss: 6.3532 | Accuracy: 22.73% | Perplexity: 574.33 | Time: 1580.71s
+2026-08-09 19:10:11,838 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=6.3532)
+2026-08-09 19:34:19,581 | INFO | Epoch 2/60 | Loss: 4.1144 | Accuracy: 41.85% | Perplexity: 61.22 | Time: 1447.73s
+2026-08-09 19:34:20,645 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=4.1144)
+2026-08-09 19:57:08,290 | INFO | Epoch 3/60 | Loss: 3.0171 | Accuracy: 51.32% | Perplexity: 20.43 | Time: 1367.55s
+2026-08-09 19:57:09,740 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=3.0171)
+2026-08-09 20:21:22,747 | INFO | Epoch 4/60 | Loss: 2.3892 | Accuracy: 59.41% | Perplexity: 10.90 | Time: 1452.99s
+2026-08-09 20:21:23,830 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=2.3892)
+2026-08-09 20:42:54,289 | INFO | Epoch 5/60 | Loss: 1.8411 | Accuracy: 66.83% | Perplexity: 6.30 | Time: 1290.44s
+2026-08-09 20:42:56,139 | INFO | [SAVED] Best checkpoint -> C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Models\sovereign_gpt\checkpoints\sovereign_gpt.pt (loss=1.8411)

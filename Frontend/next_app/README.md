@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Vibhu-Oska AI-OS — Frontend (Next.js)
+
+## Overview
+The Vibhu-Oska frontend is a **Next.js 15 + React 19** web application that provides the operator interface to the AI-OS. It communicates with the backend via:
+- **REST API** (`/api/*`) — session management, settings, health checks
+- **WebSocket** (`/ws/stream`) — real-time token-by-token streaming responses
+- **WebSocket** (`/ws`) — event bus subscriptions, system notifications
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│                  Next.js Frontend                │
+│  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
+│  │  Chat UI │  │ Settings │  │ System Panel  │  │
+│  └────┬─────┘  └────┬─────┘  └──────┬────────┘  │
+│       │              │               │            │
+│  ┌────▼──────────────▼───────────────▼────────┐  │
+│  │              API Client Layer              │  │
+│  └────┬──────────────┬───────────────┬────────┘  │
+└───────┼──────────────┼───────────────┼───────────┘
+        │ REST         │ WebSocket     │ WebSocket
+┌───────▼──────────────▼───────────────▼───────────┐
+│              FastAPI Backend (Port 8000)          │
+└──────────────────────────────────────────────────┘
+```
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- Backend running on `http://localhost:8000`
 
+### Development
 ```bash
+cd Frontend/next_app
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Build
+```bash
+npm run build
+npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Key Features
+- **Real-time streaming** — Token-by-token response display via WebSocket
+- **Session management** — Create, switch, and delete chat sessions
+- **System monitoring** — View core health, GPU usage, thermal state
+- **Settings panel** — Adjust temperature, context window, quantization
+- **Responsive design** — Works on desktop and mobile
 
-## Learn More
+## Tech Stack
+- **Framework**: Next.js 15 (App Router)
+- **UI**: React 19, Tailwind CSS 4, shadcn/ui
+- **State**: React hooks (useState, useEffect)
+- **Transport**: WebSocket + fetch API
+- **Fonts**: Geist (Vercel)
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Backend Connection
+The frontend expects the backend at `http://localhost:8000`. Configure via environment variable:
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```

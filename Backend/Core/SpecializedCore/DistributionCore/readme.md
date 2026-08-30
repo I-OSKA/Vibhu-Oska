@@ -1,6 +1,6 @@
 # DistributionCore
 
-The Stubvi public compiler, telemetry ingestion endpoint, and decentralized training data feed. DistributionCore implements the asymmetric out-of-tree distribution protocol that separates the private sovereign core from the public Stubvi tier.
+The Stubvi public compiler, telemetry ingestion endpoint, and decentralized training data feed. DistributionCore implements the asymmetric out-of-tree distribution protocol that separates the private Karsh core from the public Stubvi tier.
 
 ## Responsibility
 

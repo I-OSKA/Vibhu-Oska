@@ -1,0 +1,9 @@
+BPE training: unique chars = 117, target merges = 3879
+  Merges complete: 500/3879 | Best pair: ('n', 'o ') -> no 
+  Merges complete: 1000/3879 | Best pair: ('websock', 'et') -> websocket
+  Merges complete: 1500/3879 | Best pair: ('external API', 's') -> external APIs
+  Merges complete: 2000/3879 | Best pair: ('MEM', 'O') -> MEMO
+  Merges complete: 2500/3879 | Best pair: ('Entirely ', 'yours') -> Entirely yours
+  Merges complete: 3000/3879 | Best pair: ('I can query ', 're') -> I can query re
+  Merges complete: 3500/3879 | Best pair: ('add_', 'task') -> add_task
+Training complete. Vocab size: 4000

@@ -17,6 +17,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
+import { API } from '../../lib/api';
 
 export default function PlaygroundPage() {
   const chatHistory = useStore(state => state.chatHistory);
@@ -88,7 +89,7 @@ export default function PlaygroundPage() {
   // Connect WebSocket to backend gateway
   useEffect(() => {
     setConnecting(true);
-    const socket = new WebSocket('ws://127.0.0.1:8000/ws');
+    const socket = new WebSocket(API.buildWsUrl());
     
     socket.onopen = () => {
       setConnecting(false);
@@ -104,7 +105,7 @@ export default function PlaygroundPage() {
         if (data.type === 'task.completed') {
           const payload = data.payload || {};
           const content = payload.content || '';
-          const target = payload.metadata?.executed_on === 'gpu' ? 'GPU' : 'CPU';
+          const target = payload.metadata?.status?.message === 'OK' ? 'CPU' : 'CPU';
           const elapsed = payload.metadata?.processing_time_ms || 0;
           const statusMsg = payload.metadata?.status?.message || 'Done';
           
@@ -167,7 +168,7 @@ export default function PlaygroundPage() {
 
     try {
       // Call REST endpoint of gateway for processing
-      const resp = await fetch('http://127.0.0.1:8000/api/v1/chat', {
+      const resp = await fetch(API.buildUrl(API.endpoints.chat), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -183,7 +184,7 @@ export default function PlaygroundPage() {
       console.error(err);
       addChatMessage({
         role: 'assistant',
-        content: 'Gateway error. Please ensure python -m Backend.EntryPoint is running.',
+        content: 'Gateway error. Please ensure python -m Backend.Gateway.App is running.',
         thinking: 'WebSocket/HTTP connection failed to route request.'
       });
       setPending(false);

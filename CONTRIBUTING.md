@@ -1,6 +1,6 @@
 # Contributing to Vibhu-Oska
 
-Thank you for your interest in contributing. Vibhu-Oska is a sovereign, locally-executed
+Thank you for your interest in contributing. Vibhu-Oska is a locally-executed
 AI operating layer — every contribution must uphold that principle. No cloud dependencies,
 no external inference endpoints, no data leaving the host machine.
 

@@ -1,0 +1,16 @@
+BPE training: unique chars = 117, target merges = 7879
+  Merges complete: 500/7879 | Best pair: ('n', 'o ') -> no 
+  Merges complete: 1000/7879 | Best pair: ('websock', 'et') -> websocket
+  Merges complete: 1500/7879 | Best pair: ('external API', 's') -> external APIs
+  Merges complete: 2000/7879 | Best pair: ('MEM', 'O') -> MEMO
+  Merges complete: 2500/7879 | Best pair: ('Entirely ', 'yours') -> Entirely yours
+  Merges complete: 3000/7879 | Best pair: ('I can query ', 're') -> I can query re
+  Merges complete: 3500/7879 | Best pair: ('add_', 'task') -> add_task
+  Merges complete: 4000/7879 | Best pair: ('Tokenization converts raw text ', 'into ') -> Tokenization converts raw text into 
+  Merges complete: 4500/7879 | Best pair: ('a custom transformer ', 'built ') -> a custom transformer built 
+  Merges complete: 5000/7879 | Best pair: ('passes through the fas', 't ') -> passes through the fast 
+  Merges complete: 5500/7879 | Best pair: ('Oska uses it as the EventBus backbone ', 'for ') -> Oska uses it as the EventBus backbone for 
+  Merges complete: 6000/7879 | Best pair: ('Gravity is a fundamental force of at', 'tr') -> Gravity is a fundamental force of attr
+  Merges complete: 6500/7879 | Best pair: ('Synchron', 'ous') -> Synchronous
+  Merges complete: 7000/7879 | Best pair: ('Session continuity ', 'across ') -> Session continuity across 
+Training complete. Vocab size: 7499

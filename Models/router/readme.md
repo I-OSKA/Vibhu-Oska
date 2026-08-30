@@ -6,7 +6,7 @@ A trained classifier that reads an incoming prompt and predicts the best executi
 
 Route prompts to the right inference engine before even attempting generation:
 - `CODE` task → `vibhu-core` (Qwen2.5-0.5B, better at code)
-- `CHAT` task → `sovereign-gpt` (custom trained for conversation)
+- `CHAT` task → `sara` (custom trained for conversation)
 
 This avoids the latency cost of loading the wrong model, failing, then retrying.
 
@@ -17,10 +17,10 @@ A compact transformer classifier with dual classification heads:
 | Parameter | Value |
 |---|---|
 | Type | Encoder transformer (classification) |
-| Input | Tokenized prompt (SovereignBPETokenizer) |
+| Input | Tokenized prompt (SaraBPETokenizer) |
 | Output | Task class + Execution target class |
 | Task classes | CHAT, CODE, OS, DESIGN, IMAGE |
-| Target classes | sovereign-gpt, vibhu-core, backup |
+| Target classes | sara, vibhu-core, backup |
 | Checkpoint size | ~3MB (`best_router.pt`) |
 
 ## Files

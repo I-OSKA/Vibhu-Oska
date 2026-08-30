@@ -36,7 +36,7 @@ Tests the core intelligence pipeline (Stage 2):
 - DataCore session creation, chat persistence, semantic memory query
 - DataCore knowledge graph (GRAG) entity matching and 1-hop traversal
 - HybridCore routing (primary → backup fallback)
-- CognitionCore inference (Sovereign GPT path + BackupCore fallback)
+- CognitionCore inference (SARA path + BackupCore fallback)
 - OptimizationCore cache hit/miss behavior
 - MonitoringCore event subscription and telemetry write
 

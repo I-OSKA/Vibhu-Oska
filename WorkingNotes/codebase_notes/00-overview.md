@@ -38,7 +38,7 @@ Stage 2: The Brain Stem    ✅ COMPLETE
     ContextManager, Watchdog, AuthenticationManager, 8→65 tests passing
 
 Stage 3: The Cortex        ✅ COMPLETE
-  → Sovereign GPT (trained, 5.2MB), Router model (trained, 3MB, 10 epochs),
+  → SARA (trained, 5.2MB), Router model (trained, 3MB, 10 epochs),
     QLoRA fine-tuning pipeline, AutomationCore (OS executive),
     DesignCore (HTML/CSS generation), ImageGenerationCore (diffusion pipeline),
     DistributionCore (Stubvi compiler + telemetry)
@@ -73,7 +73,7 @@ C:\Users\USER\Desktop\Extras\.i-oska\Vibhu-Oska\
 | Relational Memory | SQLite + aiosqlite |
 | Cache | In-memory LRU (CacheManager plugin) |
 | ML Training | PyTorch (custom from scratch) |
-| GPU Inference | Sovereign GPT / Qwen2.5-0.5B |
+| GPU Inference | SARA / Qwen2.5-0.5B |
 | Serialization | Protobuf + Pydantic v2 |
 | Logging | structlog + rich |
 | Testing | pytest + pytest-asyncio (65 tests) |

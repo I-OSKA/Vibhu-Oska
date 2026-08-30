@@ -28,7 +28,7 @@ assignees: ''
 | Python | <!-- e.g. 3.11.9 --> |
 | GPU | <!-- e.g. NVIDIA RTX 4060 Laptop 8GB --> |
 | Vibhu-Oska version | <!-- git commit hash or tag --> |
-| Active engine | <!-- BackupCore / Sovereign GPT --> |
+| Active engine | <!-- BackupCore / Karsh --> |
 
 ## Relevant logs
 ```

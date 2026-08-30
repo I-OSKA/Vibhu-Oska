@@ -15,7 +15,7 @@ A full-featured dark-mode dashboard separate from the existing eOzka WebSocket c
 - **Chat view**: Streaming responses from the WebSocket, session history sidebar
 - **Task Manager**: Live queue of processing tasks with status indicators
 - **Telemetry Panel**: CPU/GPU/Memory real-time graphs (fed from AutomationCore)
-- **Model Panel**: Sovereign GPT training status, Router predictions, model selection
+- **Model Panel**: SARA training status, Router predictions, model selection
 - **Research Viewer**: SearXNG search results rendered in a clean card grid
 - **Config Editor**: Live-edit `config/default.yaml` values from the UI
 
@@ -70,7 +70,7 @@ scheduler:
   jobs:
     - name: nightly_retrain
       cron: "0 3 * * *"       # 3 AM daily
-      action: train_sovereign_gpt
+      action: train_sara
     - name: weekly_compaction
       cron: "0 2 * * 0"       # Sunday 2 AM
       action: compact_chromadb
@@ -117,7 +117,7 @@ scheduler:
 
 ### Model Distillation
 
-- Train a compact student model from Sovereign GPT teacher (knowledge distillation)
+- Train a compact student model from SARA teacher (knowledge distillation)
 - Target: <50MB, CPU-runnable, privacy-preserving
 - This is the public Stubvi inference engine — no private weights exposed
 
@@ -141,7 +141,7 @@ assert result["status"] == "pass", "DO NOT DEPLOY — private data leaked"
 
 - Marketing page for Stubvi public tier
 - Download links for the compiled public bundle
-- Feature comparison: Stubvi vs. private sovereign tier
+- Feature comparison: Stubvi vs. private SARA tier
 
 ---
 

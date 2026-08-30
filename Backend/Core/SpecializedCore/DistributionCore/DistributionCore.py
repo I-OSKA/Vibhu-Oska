@@ -43,9 +43,9 @@ from Shared.Models import CoreStatus, ExecutionTarget, PluginInfo
 # Files and patterns that must NEVER appear in a public bundle.
 # The compiler will abort the bundle if any of these are matched.
 _PRIVATE_PATH_PATTERNS: list[str] = [
-    r"Models/sovereign_gpt/checkpoints",
+    r"Models/karsh/checkpoints",
     r"Models/reasoning/lora_adapters",
-    r"sovereign_gpt\.pt",
+    r"karsh\.pt",
     r"tokenizer_vocab\.json",
     r"\.env",
     r"config/.*\.yaml",

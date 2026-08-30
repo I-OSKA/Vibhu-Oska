@@ -20,7 +20,7 @@ The FastAPI application layer — the external surface of Vibhu-Oska. All client
 | `POST` | `/chat` | Submit a prompt (fires USER_INPUT event) |
 | `GET` | `/sessions/{session_id}` | Retrieve session history |
 | `GET` | `/models` | List available inference models |
-| `POST` | `/admin/train` | Trigger Sovereign GPT training |
+| `POST` | `/admin/train` | Trigger Karsh training |
 | `POST` | `/admin/flush-cache` | Clear OptimizationCore LRU cache |
 
 ### WebSocket

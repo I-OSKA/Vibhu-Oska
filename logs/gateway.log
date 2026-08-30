@@ -1,0 +1,43 @@
+Using proactor: IocpProactor            
+2026-08-09T12:25:27.603892Z [info     ] Vibhu-Oska AI-OS booting                 [Gateway] codename='The Skeleton (Dev)' environment=development version=0.2.0
+Starting component System               
+Starting component Posthog              
+connect_tcp.started host='localhost' port=8080 local_address=None timeout=5.0 socket_options=None
+connect_tcp.failed exception=ConnectError(OSError('All connection attempts failed'))
+2026-08-09T12:25:30.956387Z [warning  ] SearXNG unreachable (will retry on first use) [SearchEngine] error='All connection attempts failed'
+2026-08-09T12:25:30.961986Z [info     ] FeedbackCollector ready                  [FeedbackCollector] export_path=C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Data\training\feedback
+2026-08-09T12:25:31.637593Z [info     ] TestingFramework ready                   [TestingFramework] pytest_version='pytest 9.0.3'
+2026-08-09T12:25:31.642193Z [info     ] CodeAnalyzer ready                       [CodeAnalyzer]
+2026-08-09T12:25:31.645248Z [info     ] ReplayLogger ready                       [ReplayLogger] log_dir=C:\Users\USER\Desktop\Extras\i-oska\Vibhu-Oska\Log\replay
+2026-08-09T12:25:31.649907Z [info     ] Task scheduled                           [Scheduler] cron=hourly name='Health Check' topic=system.health_check
+2026-08-09T12:25:31.656192Z [info     ] Task scheduled                           [Scheduler] cron=daily name='Feedback Data Export' topic=feedback.export
+2026-08-09T12:25:31.661935Z [info     ] Task scheduled                           [Scheduler] cron=weekly name='Vector DB Compaction' topic=memory.compact
+2026-08-09T12:25:31.671431Z [info     ] Task scheduled                           [Scheduler] cron=daily name='Model Eval Trigger' topic=training.eval
+2026-08-09T12:25:31.678103Z [info     ] Task scheduled                           [Scheduler] cron=weekly name='Log Rotation' topic=system.log_rotate
+2026-08-09T12:25:31.684319Z [info     ] Scheduler started                        [Scheduler] tasks=5
+2026-08-09T12:25:31.769851Z [info     ] NVIDIA GPU detected                      [ThermalMonitor] gpu='NVIDIA GeForce RTX 4060 Laptop GPU'
+2026-08-09T12:25:31.775445Z [info     ] ThermalMonitor started                   [ThermalMonitor] has_nvidia=True
+2026-08-09T12:25:31.779843Z [info     ] SelfUpdater ready                        [SelfUpdater]
+2026-08-09T12:25:31.925626Z [info     ] Event bus started                        [Gateway] topics=['task.created', 'task.started', 'task.completed', 'task.failed', 'task.cancelled']
+2026-08-09T12:25:31.938300Z [info     ] AutomationCore initialized               [AutomationCore] platform=Windows python_version=3.13.7
+2026-08-09T12:25:31.943480Z [info     ] DesignCore initialized                   [DesignCore] available_templates=['card', 'dashboard', 'stat_grid', 'stat_card', 'chat', 'nav_item', 'table', 'modal']
+2026-08-09T12:25:31.948469Z [info     ] ImageGenerationCore initialized (pipeline loads lazily on first generation request) [ImageGenerationCore]
+2026-08-09T12:25:31.952197Z [info     ] Local SLM directory not found (Models/backup). Template engine active. [BackupCore]
+2026-08-09T12:25:36.889808Z [info     ] Loading speculative router model and tokenizer... [HybridCore]
+2026-08-09T12:25:37.025743Z [info     ] Router loaded successfully.              [HybridCore]
+2026-08-09T12:25:37.028526Z [info     ] Speculative router pre-loaded on startup [HybridCore]
+2026-08-09T12:25:37.031793Z [info     ] Orchestrator registered on EventBus      [Orchestrator] topics=['user.input']
+2026-08-09T12:25:37.035774Z [info     ] Watchdog started                         [Watchdog] interval_s=30
+2026-08-09T12:25:37.039259Z [info     ] Vibhu-Oska AI-OS ready                   [Gateway] gateway_port=8000 plugins_registered=12
+2026-08-09T12:25:37.222747Z [info     ] Client connected                         [WebSocket] total_clients=1
+2026-08-09T12:25:37.358156Z [info     ] Client connected                         [WebSocket] total_clients=2
+2026-08-09T12:26:31.835180Z [info     ] Firing scheduled task                    [Scheduler] name='Health Check' run=1
+2026-08-09T12:26:31.842945Z [info     ] Firing scheduled task                    [Scheduler] name='Feedback Data Export' run=1
+2026-08-09T12:26:31.847514Z [info     ] Firing scheduled task                    [Scheduler] name='Vector DB Compaction' run=1
+2026-08-09T12:26:31.854045Z [info     ] Firing scheduled task                    [Scheduler] name='Model Eval Trigger' run=1
+2026-08-09T12:26:31.861708Z [info     ] Firing scheduled task                    [Scheduler] name='Log Rotation' run=1
+2026-08-09T13:10:17.463245Z [info     ] Client disconnected                      [WebSocket] remaining_clients=1
+2026-08-09T13:10:36.079232Z [info     ] Client disconnected                      [WebSocket] remaining_clients=0
+2026-08-09T13:26:32.534801Z [info     ] Firing scheduled task                    [Scheduler] name='Health Check' run=2
+2026-08-09T14:26:33.798063Z [info     ] Firing scheduled task                    [Scheduler] name='Health Check' run=3
+2026-08-09T15:26:34.970884Z [info     ] Firing scheduled task                    [Scheduler] name='Health Check' run=4

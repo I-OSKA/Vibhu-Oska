@@ -31,7 +31,7 @@ about: Submit a change to Vibhu-Oska AI-OS
 - [ ] New tests added for changed behaviour
 - [ ] Manually tested via WebSocket / dashboard
 - [ ] Tested on CPU-only fallback path (BackupCore)
-- [ ] Tested with Sovereign GPT checkpoint (if applicable)
+- [ ] Tested with Karsh checkpoint (if applicable)
 
 ## Checklist
 
